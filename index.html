@@ -156,6 +156,8 @@
   .edge-w{left:-4px; top:50%; width:8px; height:36px; transform:translateY(-50%); cursor:ew-resize;}
   .edge-e{right:-4px; top:50%; width:8px; height:36px; transform:translateY(-50%); cursor:ew-resize;}
   .crop-dim-label{position:absolute; left:50%; bottom:8px; transform:translateX(-50%); background:rgba(0,0,0,.7); color:#fff; font-size:11px; font-family:var(--mono); padding:3px 9px; border-radius:5px; white-space:nowrap; pointer-events:none;}
+  .shrink-preview{position:absolute; border:1.5px dashed rgba(255,255,255,.9); box-sizing:border-box; pointer-events:none; display:none;}
+  .shrink-preview::after{content:''; position:absolute; inset:0; background:rgba(255,255,255,.08);}
   .crop-hint{font-size:11.5px; color:var(--ink-soft); margin-top:10px;}
   .crop-shrink-row{display:flex; align-items:center; gap:10px; margin-top:12px; padding-top:12px; border-top:1px solid var(--line);}
   .crop-shrink-row label{font-size:12px; color:var(--ink-soft); white-space:nowrap;}
@@ -572,7 +574,7 @@ function attachPhotoHandlers(g){
           e.stopPropagation();
         });
       } else {
-        box.innerHTML = `<span class="case-badge case-${c.caseType}"><span class="dot"></span>${c.caseType}</span><div style="margin-top:7px; font-size:12.5px; line-height:1.6;">${c.items.map(i=>`${i.name} ${i.qty}개`).join('<br>')}</div>`;
+        box.innerHTML = `<span class="case-badge case-${c.caseType}"><span class="dot"></span>${c.caseType}</span><div style="margin-top:7px; font-size:12.5px; line-height:1.6;">${c.items.map(i=> Number(i.qty)===0 ? i.name : `${i.name} ${i.qty}개`).join('<br>')}</div>`;
       }
       boxLayer.appendChild(box);
 
@@ -676,6 +678,7 @@ function renderCropModal(){
       <div class="crop-canvas-wrap" id="cropWrap">
         <canvas id="cropCanvas"></canvas>
         <div class="crop-box" id="cropBox">
+          <div class="shrink-preview" id="shrinkPreview"></div>
           <div class="crop-dim-label" id="cropDimLabel"></div>
           <div class="crop-handle handle-nw" data-h="nw"></div>
           <div class="crop-handle handle-ne" data-h="ne"></div>
@@ -756,6 +759,7 @@ function renderCropModal(){
   document.getElementById('cropShrinkRange').addEventListener('input', e=>{
     cropState.shrinkPct = Number(e.target.value);
     document.getElementById('cropShrinkVal').textContent = cropState.shrinkPct + '%';
+    updateShrinkPreview();
   });
 }
 
@@ -792,6 +796,28 @@ function updateCropBoxUI(){
   const realW = Math.round(width / cropState.containScale);
   const realH = Math.round(height / cropState.containScale);
   document.getElementById('cropDimLabel').textContent = `${realW} x ${realH}`;
+
+  updateShrinkPreview();
+}
+
+/**
+ * "전체 축소" 슬라이더 값을 크롭 박스 안에 점선 사각형으로 실시간 미리보기합니다.
+ */
+function updateShrinkPreview(){
+  const el = document.getElementById('shrinkPreview');
+  if (!el || !cropState) return;
+  const pct = (cropState.shrinkPct || 100) / 100;
+
+  if (pct >= 1){
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = 'block';
+  const insetPct = (1 - pct) / 2 * 100;
+  el.style.left = insetPct + '%';
+  el.style.top = insetPct + '%';
+  el.style.width = (pct * 100) + '%';
+  el.style.height = (pct * 100) + '%';
 }
 
 function resetCropBox(){
