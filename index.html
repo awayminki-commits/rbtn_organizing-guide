@@ -94,6 +94,7 @@
     background-color:#EDEDE8; background-size:cover; background-position:center;
     border:1px solid var(--line); user-select:none; transition:outline .1s;}
   .photo-stage.no-image{background-image:repeating-linear-gradient(45deg, #EDEDE8 0 12px, #F2F2ED 12px 24px);}
+  .stage-img{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; z-index:0;}
   .photo-stage.dragover{outline:3px dashed var(--accent); outline-offset:-3px;}
   .photo-actions{display:flex; gap:8px; margin-bottom:10px;}
   .upload-overlay{position:absolute; inset:0; background:rgba(255,255,255,.7); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:var(--accent); z-index:5;}
@@ -361,7 +362,6 @@ function renderPhotoPanel(g){
   const photo = g.photos[currentPhotoIdx];
   const dots = g.photos.map((_,i)=>`<button class="${i===currentPhotoIdx?'active':''}" onclick="goToPhoto(${i})" aria-label="사진 ${i+1}"></button>`).join('');
   const hasImage = !!photo.imageUrl;
-  const stageStyle = hasImage ? `background-image:url('${photo.imageUrl}');` : '';
   return `<div class="panel">
     <div class="panel-label">
       <span>박스 배치 가이드</span>
@@ -384,8 +384,10 @@ function renderPhotoPanel(g){
           <input type="range" min="16" max="44" value="${g.markerSize||24}" oninput="previewMarkerSize(this.value)" onchange="updateMarkerSize(this.value)">
         </div>
       </div>` : ''}
-    <div class="photo-stage ${hasImage?'':'no-image'}" id="photoStage" style="${stageStyle} --marker-size:${g.markerSize||24}px;">
-      ${hasImage ? '' : '<div class="ph-label">사진 없음 · 편집자 모드에서 업로드하세요</div>'}
+    <div class="photo-stage ${hasImage?'':'no-image'}" id="photoStage" style="--marker-size:${g.markerSize||24}px;">
+      ${hasImage
+        ? `<img class="stage-img" id="stageImg" src="${photo.imageUrl}" onerror="handleStageImgError(this)">`
+        : '<div class="ph-label">사진 없음 · 편집자 모드에서 업로드하세요</div>'}
       <svg id="lineLayer" style="position:absolute; inset:0; width:100%; height:100%; pointer-events:none;"></svg>
       <div id="markerLayer"></div>
       <div id="boxLayer"></div>
@@ -394,6 +396,21 @@ function renderPhotoPanel(g){
     <div class="hint">${editable ? '마커를 드래그해 위치를 옮기고, 박스에서 케이스종류·구성품·수량을 바로 수정할 수 있습니다. 사진의 빈 곳을 클릭하면 새 마커가 추가됩니다.' : '점이 표시된 위치에 해당 구성품이 담긴 케이스를 배치하세요.'}</div>
     <div class="legend" id="photoLegend"></div>
   </div>`;
+}
+
+function handleStageImgError(imgEl){
+  console.error('이미지 로드 실패:', imgEl.src);
+  const stage = imgEl.closest('.photo-stage');
+  imgEl.remove();
+  if (stage){
+    stage.classList.add('no-image');
+    const label = document.createElement('div');
+    label.className = 'ph-label';
+    label.style.color = 'var(--danger)';
+    label.textContent = '이미지를 불러오지 못했습니다 (링크 접근 오류) · 콘솔에서 URL 확인 가능';
+    stage.prepend(label);
+  }
+  showToast('사진을 불러오지 못했습니다. URL 접근 권한 문제일 수 있습니다.', 'error');
 }
 
 function attachPhotoHandlers(g){
