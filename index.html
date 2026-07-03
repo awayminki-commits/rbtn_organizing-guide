@@ -119,7 +119,7 @@
   .anno-box{position:absolute; min-width:150px; max-width:280px; background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--c); border-radius:6px; padding:8px 10px; font-size:12px; box-shadow:0 2px 6px rgba(0,0,0,.08); transform:translateY(-50%); z-index:3;}
   .anno-box.draggable{cursor:grab;}
   .anno-box.draggable:active{cursor:grabbing;}
-  .anno-box.readonly{width:auto; max-width:240px; word-break:break-word;}
+  .anno-box.readonly{width:auto; max-width:260px; word-break:break-word;}
   .anno-head{display:flex; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:wrap;}
   .anno-head select{font-family:var(--mono); font-weight:700; font-size:11px; border:1px solid var(--line); border-radius:4px; padding:2px 4px; background:var(--bg);}
   .anno-remove{margin-left:auto; border:none; background:none; color:var(--ink-soft); cursor:pointer; font-size:13px; line-height:1;}
@@ -583,7 +583,7 @@ function attachPhotoHandlers(g){
           e.stopPropagation();
         });
       } else {
-        box.innerHTML = `<span class="case-badge case-${c.caseType}"><span class="dot"></span>${c.caseType}</span><div style="margin-top:7px; font-size:12.5px; line-height:1.6;">${c.items.map(i=> Number(i.qty)===0 ? i.name : `${i.name} ${i.qty}개`).join('<br>')}</div>`;
+        box.innerHTML = `<span class="case-badge case-${c.caseType}"><span class="dot"></span>${c.caseType}<span class="size-label">${CASE_SIZES[c.caseType]}mm</span></span><div style="margin-top:7px; font-size:12.5px; line-height:1.6;">${c.items.map(i=> Number(i.qty)===0 ? i.name : `${i.name} ${i.qty}개`).join('<br>')}</div>`;
       }
       boxLayer.appendChild(box);
 
