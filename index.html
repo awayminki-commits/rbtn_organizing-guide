@@ -49,14 +49,24 @@
   .view-note{font-size:12px; color:var(--ink-soft); background:var(--accent-soft); border:1px solid #cfe3dc; padding:8px 12px; border-radius:8px; margin-bottom:20px;}
 
   .grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(230px,1fr)); gap:14px;}
-  .card{position:relative; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; cursor:pointer; transition:border-color .15s, transform .15s;}
-  .card-delete{position:absolute; top:8px; right:8px; width:22px; height:22px; border-radius:50%; border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); font-size:12px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:2;}
-  .card-delete:hover{background:var(--danger); border-color:var(--danger); color:#fff;}
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; cursor:pointer; transition:border-color .15s, transform .15s;}
   .card:hover{border-color:var(--accent); transform:translateY(-2px);}
-  .card-id{font-family:var(--mono); font-size:11px; color:var(--ink-soft);}
+  .card-top{display:flex; align-items:center; gap:7px; margin-bottom:2px;}
+  .card-select{width:15px; height:15px; accent-color:var(--accent); cursor:pointer; flex-shrink:0;}
+  .card-id{font-family:var(--mono); font-size:11px; color:var(--ink-soft); flex:1;}
+  .card-delete{width:20px; height:20px; border-radius:50%; border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); font-size:11px; line-height:1; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .card-delete:hover{background:var(--danger); border-color:var(--danger); color:#fff;}
   .card-name{font-size:16px; font-weight:800; margin:4px 0 10px; letter-spacing:-0.01em;}
   .card-badges{display:flex; flex-wrap:wrap; gap:5px;}
   .empty{text-align:center; padding:60px 20px; color:var(--ink-soft); border:1px dashed var(--line); border-radius:12px; font-size:14px;}
+
+  .selection-panel{background:var(--surface); border:1px solid var(--accent); border-radius:12px; padding:14px 16px; margin-bottom:16px;}
+  .selection-head{display:flex; align-items:center; justify-content:space-between; font-size:13px; font-weight:700; margin-bottom:10px;}
+  .selection-games{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px;}
+  .sel-chip{display:inline-flex; align-items:center; gap:5px; font-size:12px; padding:4px 6px 4px 9px; border-radius:999px; background:var(--bg); border:1px solid var(--line); color:var(--ink-soft);}
+  .sel-chip button{border:none; background:none; color:var(--ink-soft); cursor:pointer; font-size:11px; padding:0;}
+  .sel-chip button:hover{color:var(--danger);}
+  .selection-totals{display:flex; flex-wrap:wrap; gap:8px; padding-top:12px; border-top:1px solid var(--line);}
 
   .chip{display:inline-flex; align-items:center; gap:5px; font-family:var(--mono); font-weight:700; font-size:11px; padding:3px 7px 3px 5px; border-radius:4px; border:1.4px solid var(--c); color:var(--c); background:color-mix(in srgb, var(--c) 8%, white);}
   .chip .dot{width:7px; height:7px; border-radius:50%; background:var(--c);}
@@ -345,6 +355,8 @@ function render(){
   currentGameId ? renderDetail(app) : renderList(app);
 }
 
+let selectedGameIds = new Set();
+
 function renderList(app){
   const filtered = games.filter(g=>{
     if(!searchQuery) return true;
@@ -352,9 +364,10 @@ function renderList(app){
     return g.name.toLowerCase().includes(q) || getChosung(g.name).includes(searchQuery) || g.id.includes(searchQuery);
   });
   const editable = role==='editor';
-  let html = `<div class="view-note">${role==='viewer'
-    ? '뷰어 모드입니다. 가이드를 볼 수만 있고 편집은 불가합니다.'
-    : '편집자 모드입니다. 저장 시 서버에서 편집자 코드를 확인합니다. 코드가 틀리면 저장되지 않습니다.'}</div>`;
+  let html = '';
+
+  if (selectedGameIds.size > 0) html += renderSelectionSummary();
+
   if (filtered.length===0){
     html += `<div class="empty">검색 결과가 없습니다.</div>`;
   } else {
@@ -363,9 +376,13 @@ function renderList(app){
       const counts = {};
       g.cases.forEach(c=>{ counts[c.caseType] = (counts[c.caseType]||0) + 1; });
       const types = Object.keys(counts);
+      const checked = selectedGameIds.has(g.id);
       html += `<div class="card" onclick="openGame('${g.id}')">
-        ${editable ? `<button class="card-delete" onclick="event.stopPropagation(); deleteGame('${g.id}')" title="게임 삭제">✕</button>` : ''}
-        <div class="card-id">ID ${g.id}</div>
+        <div class="card-top">
+          <input type="checkbox" class="card-select" ${checked?'checked':''} onclick="event.stopPropagation();" onchange="toggleGameSelect('${g.id}')" title="선택해서 필요 케이스 모아보기">
+          <div class="card-id">ID ${g.id}</div>
+          ${editable ? `<button class="card-delete" onclick="event.stopPropagation(); deleteGame('${g.id}')" title="게임 삭제">✕</button>` : ''}
+        </div>
         <div class="card-name">${g.name}</div>
         <div class="card-badges">${types.map(t=>`<span class="chip case-${t}"><span class="dot"></span>${t}${counts[t]>1?`x${counts[t]}`:''}</span>`).join('')}</div>
       </div>`;
@@ -373,6 +390,39 @@ function renderList(app){
     html += `</div>`;
   }
   app.innerHTML = html;
+}
+
+function toggleGameSelect(id){
+  if (selectedGameIds.has(id)) selectedGameIds.delete(id);
+  else selectedGameIds.add(id);
+  render();
+}
+
+function clearSelection(){
+  selectedGameIds.clear();
+  render();
+}
+
+function renderSelectionSummary(){
+  const selected = games.filter(g=>selectedGameIds.has(g.id));
+  const counts = {};
+  selected.forEach(g=> g.cases.forEach(c=>{ counts[c.caseType] = (counts[c.caseType]||0) + 1; }));
+  const types = Object.keys(counts).sort();
+
+  return `<div class="selection-panel">
+    <div class="selection-head">
+      <span>${selected.length}개 게임 선택됨 · 필요한 케이스 합계</span>
+      <button class="btn btn-ghost" style="padding:4px 10px; font-size:12px;" onclick="clearSelection()">선택 해제</button>
+    </div>
+    <div class="selection-games">
+      ${selected.map(g=>`<span class="sel-chip">${g.name}<button onclick="toggleGameSelect('${g.id}')">✕</button></span>`).join('')}
+    </div>
+    <div class="selection-totals">
+      ${types.length
+        ? types.map(t=>`<span class="case-badge case-${t}"><span class="dot"></span>${t}<span class="size-label">${counts[t]}개</span></span>`).join('')
+        : '<span style="color:var(--ink-soft); font-size:13px;">선택한 게임에 등록된 케이스가 없습니다.</span>'}
+    </div>
+  </div>`;
 }
 
 function deleteGame(id){
