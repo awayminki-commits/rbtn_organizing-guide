@@ -668,10 +668,10 @@ function renderCropModal(){
         <canvas id="cropCanvas" width="${CROP_PREVIEW_W}" height="${CROP_PREVIEW_H}"></canvas>
       </div>
       <div class="crop-controls">
-        <label>확대</label>
-        <input type="range" id="cropZoomRange" min="1" max="3" step="0.01" value="1">
+        <label>축소 · 확대</label>
+        <input type="range" id="cropZoomRange" min="0.3" max="3" step="0.01" value="1">
       </div>
-      <div class="crop-hint">드래그로 위치 이동, 슬라이더로 확대/축소 후 적용을 누르세요.</div>
+      <div class="crop-hint">슬라이더를 왼쪽으로 내리면 사진이 작아지며 여백이 생깁니다. 오른쪽으로 올리면 확대·이동(크롭)됩니다.</div>
       <div class="modal-actions">
         <button class="btn btn-ghost" onclick="cancelCropModal()">취소</button>
         <button class="btn btn-primary" onclick="applyCrop()">적용 · 업로드</button>
@@ -712,8 +712,18 @@ function clampCropPan(){
   const { img, baseScale, zoom } = cropState;
   const scale = baseScale * zoom;
   const sW = CROP_PREVIEW_W/scale, sH = CROP_PREVIEW_H/scale;
-  cropState.panX = Math.max(0, Math.min(img.width - sW, cropState.panX));
-  cropState.panY = Math.max(0, Math.min(img.height - sH, cropState.panY));
+
+  // 축소해서 이미지가 프레임보다 작아지면(여백 생김) 가운데로 고정
+  if (sW >= img.width) {
+    cropState.panX = (img.width - sW) / 2;
+  } else {
+    cropState.panX = Math.max(0, Math.min(img.width - sW, cropState.panX));
+  }
+  if (sH >= img.height) {
+    cropState.panY = (img.height - sH) / 2;
+  } else {
+    cropState.panY = Math.max(0, Math.min(img.height - sH, cropState.panY));
+  }
 }
 
 function drawCropPreview(){
@@ -724,6 +734,8 @@ function drawCropPreview(){
   const scale = baseScale * zoom;
   const sW = CROP_PREVIEW_W/scale, sH = CROP_PREVIEW_H/scale;
   ctx.clearRect(0,0,CROP_PREVIEW_W,CROP_PREVIEW_H);
+  ctx.fillStyle = '#F6F6F3';
+  ctx.fillRect(0,0,CROP_PREVIEW_W,CROP_PREVIEW_H);
   ctx.drawImage(img, panX, panY, sW, sH, 0, 0, CROP_PREVIEW_W, CROP_PREVIEW_H);
 }
 
@@ -742,6 +754,8 @@ function applyCrop(){
   const outCanvas = document.createElement('canvas');
   outCanvas.width = CROP_OUTPUT_W; outCanvas.height = CROP_OUTPUT_H;
   const ctx = outCanvas.getContext('2d');
+  ctx.fillStyle = '#F6F6F3';
+  ctx.fillRect(0,0,CROP_OUTPUT_W,CROP_OUTPUT_H);
   ctx.drawImage(img, panX, panY, sW, sH, 0, 0, CROP_OUTPUT_W, CROP_OUTPUT_H);
 
   const dataUrl = outCanvas.toDataURL('image/jpeg', 0.85);
