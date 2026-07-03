@@ -153,7 +153,7 @@
   .label-toolbar button{border:none; background:none; color:var(--ink); font-size:11px; padding:2px 6px; cursor:pointer; border-radius:4px; font-family:var(--sans);}
   .label-toolbar button:hover{background:var(--bg);}
   .label-toolbar .label-del:hover{color:var(--danger);}
-  .photo-label{background:#000; color:#fff; font-family:var(--sans); font-weight:600; white-space:pre-wrap; padding:calc(7px * var(--label-scale,1)) calc(10px * var(--label-scale,1)); border-radius:3px; line-height:1.35; box-shadow:0 2px 8px rgba(0,0,0,.35); outline:none; max-width:calc(300px * var(--label-scale,1)); min-width:20px; min-height:1em; text-align:center;}
+  .photo-label{background:#000; color:#fff; font-family:var(--sans); font-weight:600; white-space:pre-wrap; padding:0.5em 0.7em; border-radius:0.25em; line-height:1.35; box-shadow:0 2px 8px rgba(0,0,0,.35); outline:none; max-width:20em; min-width:1.4em; min-height:1em; text-align:center;}
   .photo-label:focus{box-shadow:0 0 0 2px var(--accent);}
   .label-resize{position:absolute; right:-5px; bottom:-5px; width:13px; height:13px; background:#fff; border:2px solid #000; border-radius:2px; cursor:nwse-resize; z-index:2;}
   .hint{font-size:12px; color:var(--ink-soft); margin-top:10px;}
@@ -654,17 +654,13 @@ function attachPhotoHandlers(g){
   }
 
   let currentUiScale = 1;
-  let currentLabelScale = 1;
 
   function draw(){
     const w = stage.clientWidth, h = stage.clientHeight;
     // 텍스트박스/마커: 너무 작아져서 편집이 불편해지지 않도록 최소 50%는 유지
     const uiScale = Math.max(0.5, Math.min(1, w / 650));
     currentUiScale = uiScale;
-    // 라벨(실제 라벨 인쇄 미리보기): 최소치 없이 사진과 완전히 같은 비율로 축소
-    currentLabelScale = Math.max(0.12, Math.min(1, w / 650));
     stage.style.setProperty('--ui-scale', uiScale);
-    stage.style.setProperty('--label-scale', currentLabelScale);
     stage.style.setProperty('--marker-size', Math.round((g.markerSize||24) * uiScale) + 'px');
     const autoPos = layoutAutoBoxes();
     markerLayer.innerHTML=''; boxLayer.innerHTML=''; lineLayer.innerHTML='';
@@ -763,6 +759,11 @@ function attachPhotoHandlers(g){
     labelLayer.innerHTML = '';
 
     photo.labels.forEach((lbl, li) => {
+      // 구버전 호환: 예전엔 절대 px(fontSize/width/height, 기준폭 650px)로 저장했음 → % 값으로 환산
+      const fsPct = lbl.fontSizePct != null ? lbl.fontSizePct : ((lbl.fontSize || 14) / 650 * 100);
+      const wPct = lbl.widthPct != null ? lbl.widthPct : (lbl.width != null ? lbl.width / 650 * 100 : null);
+      const hPct = lbl.heightPct != null ? lbl.heightPct : (lbl.height != null ? lbl.height / 487.5 * 100 : null);
+
       const wrap = document.createElement('div');
       wrap.className = 'photo-label-wrap';
       wrap.style.left = (w*lbl.x/100)+'px';
@@ -770,10 +771,11 @@ function attachPhotoHandlers(g){
 
       const labelEl = document.createElement('div');
       labelEl.className = 'photo-label';
-      labelEl.style.fontSize = ((lbl.fontSize||14) * currentLabelScale) + 'px';
-      if (lbl.sized){
-        labelEl.style.width = (lbl.width * currentLabelScale) + 'px';
-        labelEl.style.height = (lbl.height * currentLabelScale) + 'px';
+      // 화면 폭(w)의 %로 직접 계산 → 데스크톱/모바일 어디서든 사진 대비 정확히 같은 비율
+      labelEl.style.fontSize = (w * fsPct / 100) + 'px';
+      if (lbl.sized && wPct != null && hPct != null){
+        labelEl.style.width = (w * wPct / 100) + 'px';
+        labelEl.style.height = (h * hPct / 100) + 'px';
         labelEl.style.overflow = 'hidden';
       }
       labelEl.textContent = lbl.text;
@@ -809,7 +811,7 @@ function attachPhotoHandlers(g){
           resizeLabelStart = {
             startX: e.clientX, startY: e.clientY,
             startW: labelRect.width, startH: labelRect.height,
-            startFontSize: lbl.fontSize || 14
+            startFontSizePct: fsPct
           };
           e.stopPropagation();
           e.preventDefault();
@@ -856,13 +858,15 @@ function attachPhotoHandlers(g){
         const lbl = photo.labels[resizingLabel];
         const dx = e.clientX - resizeLabelStart.startX;
         const dy = e.clientY - resizeLabelStart.startY;
-        const newW = Math.max(30, resizeLabelStart.startW + dx);
-        const newH = Math.max(18, resizeLabelStart.startH + dy);
+        const newW = Math.max(20, resizeLabelStart.startW + dx);
+        const newH = Math.max(14, resizeLabelStart.startH + dy);
         const scale = Math.max(newW/resizeLabelStart.startW, newH/resizeLabelStart.startH);
-        // 화면에 실제 보이는 크기(newW/newH)를 기준 배율(1배) 기준 값으로 환산해서 저장
-        // → 나중에 화면 크기가 달라져도(모바일 등) currentLabelScale과 곱해 항상 비율에 맞게 표시됨
-        lbl.width = newW / currentLabelScale; lbl.height = newH / currentLabelScale; lbl.sized = true;
-        lbl.fontSize = Math.max(8, Math.min(72, Math.round(resizeLabelStart.startFontSize * scale)));
+        // 화면 폭(w)/높이(h) 대비 %로 저장 → 어떤 화면 크기에서도 항상 사진과 같은 비율로 재계산됨
+        lbl.widthPct = (newW / rect.width) * 100;
+        lbl.heightPct = (newH / rect.height) * 100;
+        lbl.sized = true;
+        lbl.fontSizePct = Math.max(0.4, Math.min(20, resizeLabelStart.startFontSizePct * scale));
+        delete lbl.width; delete lbl.height; delete lbl.fontSize; // 구버전 필드 정리
         drawLabels();
       }
     };
@@ -1262,10 +1266,8 @@ function createLabelFromCase(markerIdxInCurrentPhoto){
     x: Math.min(94, baseX + 6),
     y: Math.min(94, baseY + 8),
     text,
-    fontSize: 14,
-    sized: false,
-    width: 0,
-    height: 0
+    fontSizePct: 2.15, // 화면 폭의 2.15% (기존 "650px 기준 14px" 디자인과 동일한 비율)
+    sized: false
   });
   saveGames();
   render();
@@ -1283,7 +1285,9 @@ function changeLabelFontSize(li, delta){
   const g = games.find(x=>x.id===currentGameId);
   const photo = g.photos[currentPhotoIdx];
   const lbl = photo.labels[li];
-  lbl.fontSize = Math.max(8, Math.min(72, (lbl.fontSize||14) + delta*2));
+  const current = lbl.fontSizePct != null ? lbl.fontSizePct : ((lbl.fontSize||14)/650*100);
+  lbl.fontSizePct = Math.max(0.4, Math.min(20, current + delta*0.3));
+  delete lbl.fontSize;
   saveGames();
   render();
 }
