@@ -71,9 +71,9 @@
   .chip{display:inline-flex; align-items:center; gap:5px; font-family:var(--mono); font-weight:700; font-size:11px; padding:3px 7px 3px 5px; border-radius:4px; border:1.4px solid var(--c); color:var(--c); background:color-mix(in srgb, var(--c) 8%, white);}
   .chip .dot{width:7px; height:7px; border-radius:50%; background:var(--c);}
 
-  .case-badge{display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-weight:800; font-size:17px; padding:6px 12px 6px 9px; border-radius:7px; border:2.2px solid var(--c); color:var(--c); background:color-mix(in srgb, var(--c) 10%, white); line-height:1;}
-  .case-badge .dot{width:11px; height:11px; border-radius:50%; background:var(--c); flex-shrink:0;}
-  .case-badge .size-label{font-size:10.5px; font-weight:600; color:var(--ink-soft); font-family:var(--sans); white-space:nowrap;}
+  .case-badge{display:inline-flex; align-items:center; gap:calc(7px * var(--ui-scale,1)); font-family:var(--mono); font-weight:800; font-size:calc(17px * var(--ui-scale,1)); padding:calc(6px * var(--ui-scale,1)) calc(12px * var(--ui-scale,1)) calc(6px * var(--ui-scale,1)) calc(9px * var(--ui-scale,1)); border-radius:7px; border:calc(2.2px * var(--ui-scale,1)) solid var(--c); color:var(--c); background:color-mix(in srgb, var(--c) 10%, white); line-height:1;}
+  .case-badge .dot{width:calc(11px * var(--ui-scale,1)); height:calc(11px * var(--ui-scale,1)); border-radius:50%; background:var(--c); flex-shrink:0;}
+  .case-badge .size-label{font-size:calc(10.5px * var(--ui-scale,1)); font-weight:600; color:var(--ink-soft); font-family:var(--sans); white-space:nowrap;}
 
   .detail-head{display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin-bottom:18px;}
   .back{background:none; border:none; color:var(--ink-soft); font-size:13px; cursor:pointer; padding:0; margin-bottom:10px; font-family:var(--sans);}
@@ -130,17 +130,17 @@
   .marker-size-control{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-soft);}
   .marker-size-control input[type=range]{width:110px;}
   .annot-line{stroke-width:3.2; fill:none; opacity:.85;}
-  .anno-box{position:absolute; min-width:150px; max-width:280px; background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--c); border-radius:6px; padding:8px 10px; font-size:12px; box-shadow:0 2px 6px rgba(0,0,0,.08); transform:translateY(-50%); z-index:3;}
+  .anno-box{position:absolute; min-width:calc(120px * var(--ui-scale,1)); max-width:calc(280px * var(--ui-scale,1)); background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--c); border-radius:6px; padding:calc(8px * var(--ui-scale,1)) calc(10px * var(--ui-scale,1)); font-size:calc(12px * var(--ui-scale,1)); box-shadow:0 2px 6px rgba(0,0,0,.08); transform:translateY(-50%); z-index:3;}
   .anno-box.draggable{cursor:grab;}
   .anno-box.draggable:active{cursor:grabbing;}
-  .anno-box.readonly{width:auto; max-width:260px; word-break:break-word;}
-  .anno-head{display:flex; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:wrap;}
-  .anno-head select{font-family:var(--mono); font-weight:700; font-size:11px; border:1px solid var(--line); border-radius:4px; padding:2px 4px; background:var(--bg);}
-  .anno-remove{margin-left:auto; border:none; background:none; color:var(--ink-soft); cursor:pointer; font-size:13px; line-height:1;}
+  .anno-box.readonly{width:auto; max-width:calc(260px * var(--ui-scale,1)); word-break:break-word;}
+  .anno-head{display:flex; align-items:center; gap:calc(6px * var(--ui-scale,1)); margin-bottom:calc(6px * var(--ui-scale,1)); flex-wrap:wrap;}
+  .anno-head select{font-family:var(--mono); font-weight:700; font-size:calc(11px * var(--ui-scale,1)); border:1px solid var(--line); border-radius:4px; padding:2px 4px; background:var(--bg);}
+  .anno-remove{margin-left:auto; border:none; background:none; color:var(--ink-soft); cursor:pointer; font-size:calc(13px * var(--ui-scale,1)); line-height:1;}
   .anno-remove:hover{color:var(--danger);}
   .anno-item{display:flex; gap:5px; margin-bottom:4px; align-items:center;}
-  .anno-item input[type=text]{flex:0 1 auto; min-width:50px; max-width:220px; border:1px solid var(--line); border-radius:4px; padding:3px 5px; font-size:11.5px; font-family:var(--sans);}
-  .anno-item input[type=number]{flex:0 0 auto; width:42px; border:1px solid var(--line); border-radius:4px; padding:3px 4px; font-size:11.5px; font-family:var(--sans);}
+  .anno-item input[type=text]{flex:0 1 auto; min-width:50px; max-width:220px; border:1px solid var(--line); border-radius:4px; padding:3px 5px; font-size:calc(11.5px * var(--ui-scale,1)); font-family:var(--sans);}
+  .anno-item input[type=number]{flex:0 0 auto; width:42px; border:1px solid var(--line); border-radius:4px; padding:3px 4px; font-size:calc(11.5px * var(--ui-scale,1)); font-family:var(--sans);}
   .anno-item button{border:none; background:none; color:var(--ink-soft); cursor:pointer; font-size:12px;}
   .anno-additem{font-size:11px; color:var(--accent); background:none; border:none; font-weight:700; cursor:pointer; padding:2px 0; font-family:var(--sans);}
   .anno-label-btn{background:#000; color:#fff; border:none; border-radius:4px; font-size:10px; padding:3px 8px; cursor:pointer; font-weight:700; margin-left:auto;}
@@ -153,7 +153,7 @@
   .label-toolbar button{border:none; background:none; color:var(--ink); font-size:11px; padding:2px 6px; cursor:pointer; border-radius:4px; font-family:var(--sans);}
   .label-toolbar button:hover{background:var(--bg);}
   .label-toolbar .label-del:hover{color:var(--danger);}
-  .photo-label{background:#000; color:#fff; font-family:var(--sans); font-weight:600; white-space:pre-wrap; padding:7px 10px; border-radius:3px; line-height:1.35; box-shadow:0 2px 8px rgba(0,0,0,.35); outline:none; max-width:300px; min-width:30px; min-height:1em; text-align:center;}
+  .photo-label{background:#000; color:#fff; font-family:var(--sans); font-weight:600; white-space:pre-wrap; padding:calc(7px * var(--ui-scale,1)) calc(10px * var(--ui-scale,1)); border-radius:3px; line-height:1.35; box-shadow:0 2px 8px rgba(0,0,0,.35); outline:none; max-width:calc(300px * var(--ui-scale,1)); min-width:30px; min-height:1em; text-align:center;}
   .photo-label:focus{box-shadow:0 0 0 2px var(--accent);}
   .label-resize{position:absolute; right:-5px; bottom:-5px; width:13px; height:13px; background:#fff; border:2px solid #000; border-radius:2px; cursor:nwse-resize; z-index:2;}
   .hint{font-size:12px; color:var(--ink-soft); margin-top:10px;}
@@ -652,8 +652,14 @@ function attachPhotoHandlers(g){
     return pos;
   }
 
+  let currentUiScale = 1;
+
   function draw(){
     const w = stage.clientWidth, h = stage.clientHeight;
+    const uiScale = Math.max(0.5, Math.min(1, w / 650)); // 사진이 작아지면 UI 요소도 비례해서 축소
+    currentUiScale = uiScale;
+    stage.style.setProperty('--ui-scale', uiScale);
+    stage.style.setProperty('--marker-size', Math.round((g.markerSize||24) * uiScale) + 'px');
     const autoPos = layoutAutoBoxes();
     markerLayer.innerHTML=''; boxLayer.innerHTML=''; lineLayer.innerHTML='';
     let legendHtml = '';
@@ -726,7 +732,7 @@ function attachPhotoHandlers(g){
           e.stopPropagation();
         });
       } else {
-        box.innerHTML = `<span class="case-badge case-${c.caseType}"><span class="dot"></span>${c.caseType}<span class="size-label">${CASE_SIZES[c.caseType]}mm</span></span><div style="margin-top:7px; font-size:12.5px; line-height:1.6;">${c.items.map(i=> Number(i.qty)===0 ? i.name : `${i.name} ${i.qty}개`).join('<br>')}</div>`;
+        box.innerHTML = `<span class="case-badge case-${c.caseType}"><span class="dot"></span>${c.caseType}<span class="size-label">${CASE_SIZES[c.caseType]}mm</span></span><div style="margin-top:${(7*uiScale).toFixed(1)}px; font-size:${(12.5*uiScale).toFixed(1)}px; line-height:1.6;">${c.items.map(i=> Number(i.qty)===0 ? i.name : `${i.name} ${i.qty}개`).join('<br>')}</div>`;
       }
       boxLayer.appendChild(box);
 
@@ -737,7 +743,7 @@ function attachPhotoHandlers(g){
       ln.setAttribute('x2',bx); ln.setAttribute('y2',by);
       ln.setAttribute('class','annot-line');
       const colorVar = getComputedStyle(el).getPropertyValue('--c') || '#333';
-      ln.setAttribute('style', `stroke:${colorVar};`);
+      ln.setAttribute('style', `stroke:${colorVar}; stroke-width:${(3.2*uiScale).toFixed(2)};`);
       lineLayer.appendChild(ln);
 
       legendHtml += `<span class="chip case-${c.caseType}"><span class="dot"></span>${c.caseType} · ${c.items.map(i=>i.name).join(', ')}</span>`;
@@ -758,10 +764,10 @@ function attachPhotoHandlers(g){
 
       const labelEl = document.createElement('div');
       labelEl.className = 'photo-label';
-      labelEl.style.fontSize = (lbl.fontSize||14)+'px';
+      labelEl.style.fontSize = ((lbl.fontSize||14) * currentUiScale) + 'px';
       if (lbl.sized){
-        labelEl.style.width = lbl.width+'px';
-        labelEl.style.height = lbl.height+'px';
+        labelEl.style.width = (lbl.width * currentUiScale) + 'px';
+        labelEl.style.height = (lbl.height * currentUiScale) + 'px';
         labelEl.style.overflow = 'hidden';
       }
       labelEl.textContent = lbl.text;
@@ -847,7 +853,9 @@ function attachPhotoHandlers(g){
         const newW = Math.max(30, resizeLabelStart.startW + dx);
         const newH = Math.max(18, resizeLabelStart.startH + dy);
         const scale = Math.max(newW/resizeLabelStart.startW, newH/resizeLabelStart.startH);
-        lbl.width = newW; lbl.height = newH; lbl.sized = true;
+        // 화면에 실제 보이는 크기(newW/newH)를 기준 배율(1배) 기준 값으로 환산해서 저장
+        // → 나중에 화면 크기가 달라져도(모바일 등) currentUiScale과 곱해 항상 비율에 맞게 표시됨
+        lbl.width = newW / currentUiScale; lbl.height = newH / currentUiScale; lbl.sized = true;
         lbl.fontSize = Math.max(8, Math.min(72, Math.round(resizeLabelStart.startFontSize * scale)));
         drawLabels();
       }
@@ -1442,7 +1450,11 @@ document.getElementById('newGameBtn').addEventListener('click', ()=>{
   });
 });
 
-(async function init(){ await loadGames(); render(); })();
+(async function init(){
+  document.getElementById('app').innerHTML = `<div class="empty">게임 목록을 불러오는 중입니다...</div>`;
+  await loadGames();
+  render();
+})();
 </script>
 </body>
 </html>
