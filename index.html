@@ -25,6 +25,11 @@
   .case-E{--c:#1F7A8C;} .case-F{--c:#2A5CA6;} .case-G{--c:#5B3FA6;} .case-H{--c:#9C2E8C;}
   .case-I{--c:#B32E5C;} .case-J{--c:#8C3A2E;} .case-K{--c:#5C5C1F;} .case-L{--c:#3A5C3A;}
 
+  .login-gate{position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; z-index:200; padding:20px;}
+  .login-gate-box{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:36px 32px; max-width:360px; width:100%; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,.08);}
+  .login-gate-box .brand{font-size:22px; margin-bottom:16px;}
+  .login-gate-box p{font-size:13px; color:var(--ink-soft); line-height:1.6; margin:0;}
+
   .topbar{position:sticky; top:0; z-index:20; background:var(--surface); border-bottom:1px solid var(--line);
     padding:14px 24px; display:flex; align-items:center; gap:16px;}
   .brand{font-weight:900; font-size:19px; letter-spacing:-0.03em; white-space:nowrap; text-transform:uppercase; color:var(--accent); background:none; border:none; cursor:pointer; padding:0; font-family:var(--sans); display:flex; align-items:baseline; gap:1px;}
@@ -260,22 +265,33 @@
 </head>
 <body>
 
-<div class="topbar">
-  <button class="brand" onclick="closeGame()" aria-label="게임 목록으로 이동">RED BUTTON<span class="r-mark">®</span><span class="sub">오거나이징 가이드</span></button>
-  <div class="search"><input id="searchInput" placeholder="게임 이름 검색 (초성 가능, 예: ㅋㅅㅋㄷㅇ)"></div>
-  <div class="role-toggle">
-    <button id="roleViewerBtn" class="active">뷰어</button>
-    <button id="roleEditorBtn">편집자</button>
+<div id="loginGate" class="login-gate">
+  <div class="login-gate-box">
+    <div class="brand" style="justify-content:center; pointer-events:none;">RED BUTTON<span class="r-mark">®</span></div>
+    <p>레드버튼 오거나이징 가이드는 사내 전용 자료입니다.<br>구글 계정으로 로그인해주세요.</p>
+    <div id="gateGsiButton" style="display:flex; justify-content:center; margin-top:16px;"></div>
+    <div id="gateError" style="display:none; color:var(--danger); font-size:12.5px; margin-top:10px; text-align:center;"></div>
   </div>
-  <button class="btn btn-ghost" onclick="refreshGames()" title="다른 편집자의 변경사항 불러오기">↻ 새로고침</button>
-  <button class="btn btn-ghost" onclick="showHelpModal()">이용 방법</button>
-  <button class="btn btn-ghost" id="accessBtn" style="display:none;" onclick="showAccessModal()">🔑 권한 관리</button>
-  <button class="btn btn-ghost" id="logoutBtn" style="display:none;" onclick="logout()">로그아웃</button>
-  <button class="btn btn-primary" id="newGameBtn" style="display:none;">+ 새 가이드</button>
 </div>
 
-<main id="app"></main>
-<div id="toast"></div>
+<div id="appRoot" style="display:none;">
+  <div class="topbar">
+    <button class="brand" onclick="closeGame()" aria-label="게임 목록으로 이동">RED BUTTON<span class="r-mark">®</span><span class="sub">오거나이징 가이드</span></button>
+    <div class="search"><input id="searchInput" placeholder="게임 이름 검색 (초성 가능, 예: ㅋㅅㅋㄷㅇ)"></div>
+    <div class="role-toggle">
+      <button id="roleViewerBtn" class="active">뷰어</button>
+      <button id="roleEditorBtn">편집자</button>
+    </div>
+    <button class="btn btn-ghost" onclick="refreshGames()" title="다른 편집자의 변경사항 불러오기">↻ 새로고침</button>
+    <button class="btn btn-ghost" onclick="showHelpModal()">이용 방법</button>
+    <button class="btn btn-ghost" id="accessBtn" style="display:none;" onclick="showAccessModal()">🔑 권한 관리</button>
+    <button class="btn btn-ghost" id="logoutBtn" onclick="logout()">로그아웃</button>
+    <button class="btn btn-primary" id="newGameBtn" style="display:none;">+ 새 가이드</button>
+  </div>
+
+  <main id="app"></main>
+  <div id="toast"></div>
+</div>
 
 <script>
 const CASE_TYPES = ['A','B','C','D','E','F','G','H','I','J','K','L'];
@@ -383,8 +399,19 @@ async function loadGames(){
     return;
   }
   try{
-    const res = await fetch(WEB_APP_URL);
+    const res = await fetch(WEB_APP_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'listGames', idToken: authToken })
+    });
     const data = await res.json();
+    if (data.success === false){
+      // 로그인이 만료됐거나 유효하지 않음 → 다시 로그인 화면으로
+      clearCachedAuthToken();
+      showGate();
+      showToast('로그인이 만료되었습니다. 다시 로그인해주세요.', 'error');
+      return;
+    }
     games = (data.games && data.games.length) ? data.games : SEED;
   }catch(e){
     console.error('불러오기 실패, 데모 데이터로 대체합니다.', e);
@@ -456,7 +483,6 @@ function render(){
   const isEditor = role==='editor';
   document.getElementById('newGameBtn').style.display = isEditor ? 'inline-block' : 'none';
   document.getElementById('accessBtn').style.display = isEditor ? 'inline-block' : 'none';
-  document.getElementById('logoutBtn').style.display = isEditor ? 'inline-block' : 'none';
   currentGameId ? renderDetail(app) : renderList(app);
 }
 
@@ -1265,6 +1291,7 @@ function setHelpTab(tab){
 function helpViewerContent_(){
   return `
     <ul class="help-list">
+      <li><b>로그인</b> — 사이트 접속 시 구글 계정 로그인이 먼저 필요합니다 (레드버튼 내부 자료 보호를 위함). 로그인만 하면 뷰어로 바로 볼 수 있습니다.</li>
       <li><b>게임 찾기</b> — 상단 검색창에 게임 이름을 입력하세요. 초성만 입력해도 검색됩니다 (예: <code>ㅋㅅㅋㄷㅇ</code> → 캐스캐디아).</li>
       <li><b>가이드 보기</b> — 게임을 클릭하면 <b>사진</b> 탭과 <b>표</b> 탭으로 볼 수 있습니다.
         <ul>
@@ -1283,7 +1310,7 @@ function helpViewerContent_(){
 function helpEditorContent_(){
   return `
     <ul class="help-list">
-      <li><b>편집자 로그인</b> — 상단 "편집자" 버튼을 누르면 구글 로그인 창이 뜹니다. 승인된 구글 계정으로 로그인하면 바로 편집 가능합니다. 승인 안 된 계정이면 자동으로 승인 요청이 접수됩니다.</li>
+      <li><b>편집자 전환</b> — 이미 로그인된 상태이므로, 상단 "편집자" 버튼을 누르면 별도 팝업 없이 바로 승인 여부를 확인합니다. 승인된 계정이면 즉시 편집 가능하고, 아닌 경우 승인 요청이 자동 접수됩니다.</li>
       <li><b>권한 관리</b> — 편집자 모드에서 "🔑 권한 관리" 버튼으로 승인 대기 중인 요청을 승인/거절하거나, 이메일을 직접 입력해서 요청 없이도 먼저 권한을 부여할 수 있습니다. 등록된 편집자는 언제든 삭제(권한 회수)할 수 있습니다.</li>
       <li><b>새 가이드 만들기</b> — 상단 "+ 새 가이드" 버튼으로 게임 ID·이름을 입력해 새로 생성합니다.</li>
       <li><b>사진 등록</b> — 사진 탭에서 "사진 업로드" 또는 사진 영역에 파일을 끌어다 놓으면, 자르기(크롭)·이동·확대·축소 편집창이 뜹니다. 필요한 부분만 선택해서 적용하세요. "+ 사진 페이지 추가"로 사진을 여러 장 등록하고 넘겨가며 관리할 수 있습니다.</li>
@@ -1529,16 +1556,25 @@ function clearCachedAuthToken(){
 
 /**
  * "편집자" 버튼 클릭 시 호출됩니다.
- * 캐시된 로그인이 유효하면 바로 편집자 모드로, 아니면 구글 로그인 창을 띄웁니다.
+ * 이미 로그인 게이트를 통과한 상태이므로, 새 팝업 없이 그 토큰으로 승인 여부만 확인합니다.
  */
-function enterEditorMode(){
-  const cached = getCachedAuthToken();
-  if (cached){
-    authToken = cached.token; authEmail = cached.email;
+async function enterEditorMode(){
+  if (!authToken){ showGate(); return; }
+  showToast('권한 확인 중...');
+  const result = await checkAccessOnServer(authToken);
+
+  if (result.status === 'approved'){
+    authEmail = result.email;
+    cacheAuthToken(authToken, authEmail);
     setRole('editor');
-    return;
+    showToast('편집자로 전환되었습니다 (' + authEmail + ')');
+  } else if (result.status === 'pending'){
+    showToast(result.newRequest ? '편집자 권한 요청이 접수되었습니다. 승인을 기다려주세요.' : '아직 승인 대기 중입니다. 편집자에게 문의해주세요.', 'error');
+  } else {
+    showToast('권한 확인에 실패했습니다. 다시 로그인해주세요.', 'error');
+    clearCachedAuthToken();
+    showGate();
   }
-  showLoginModal();
 }
 
 function setRole(r){
@@ -1550,60 +1586,71 @@ function setRole(r){
 
 function logout(){
   clearCachedAuthToken();
-  setRole('viewer');
-  showToast('로그아웃되었습니다.');
+  role = 'viewer';
+  currentGameId = null;
+  document.getElementById('appRoot').style.display = 'none';
+  showGate();
 }
 
 /**
  * ============================================================
- * 구글 로그인
+ * 구글 로그인 (사이트 진입 관문 - 뷰어도 로그인 필요)
  * ============================================================
  */
-function showLoginModal(){
-  const backdrop = document.createElement('div');
-  backdrop.className = 'modal-backdrop';
-  backdrop.id = 'loginBackdrop';
-  backdrop.innerHTML = `
-    <div class="modal">
-      <h3>편집자 로그인</h3>
-      <p style="font-size:12.5px; color:var(--ink-soft); margin-top:-8px; line-height:1.5;">권한이 있는 구글 계정으로 로그인해주세요. 권한이 없는 계정이면 요청이 자동으로 접수되어, 승인된 편집자가 확인 후 승인해드립니다.</p>
-      <div id="gsiButtonContainer" style="display:flex; justify-content:center; margin:16px 0;"></div>
-      <div class="modal-actions">
-        <button class="btn btn-ghost" onclick="document.getElementById('loginBackdrop').remove()">취소</button>
-      </div>
-    </div>`;
-  document.body.appendChild(backdrop);
+function showGate(){
+  document.getElementById('loginGate').style.display = 'flex';
+  document.getElementById('appRoot').style.display = 'none';
+  renderGateButton();
+}
+
+function renderGateButton(){
+  const container = document.getElementById('gateGsiButton');
+  const errorEl = document.getElementById('gateError');
+  errorEl.style.display = 'none';
+  container.innerHTML = '';
 
   if (typeof google === 'undefined' || !google.accounts || !google.accounts.id){
-    document.getElementById('gsiButtonContainer').innerHTML = '<div style="color:var(--danger); font-size:13px; text-align:center;">구글 로그인 라이브러리를 불러오지 못했습니다.<br>인터넷 연결을 확인 후 새로고침 해주세요.</div>';
+    errorEl.style.display = 'block';
+    errorEl.textContent = '구글 로그인 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인 후 새로고침 해주세요.';
     return;
   }
   google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
-    callback: handleGoogleCredential
+    callback: handleGateCredential
   });
-  google.accounts.id.renderButton(document.getElementById('gsiButtonContainer'), { theme:'outline', size:'large', width:280 });
+  google.accounts.id.renderButton(container, { theme:'outline', size:'large', width:280 });
 }
 
-async function handleGoogleCredential(response){
-  const idToken = response.credential;
-  const backdrop = document.getElementById('loginBackdrop');
-  if (backdrop) backdrop.remove();
+/**
+ * 구글 로그인 성공 시 호출됩니다. (뷰어 접근은 승인 여부와 무관하게 로그인만 되면 허용)
+ * 실제 데이터 보호는 서버(doPost)가 토큰을 검증하는 단계에서 이뤄집니다.
+ */
+async function handleGateCredential(response){
+  authToken = response.credential;
+  authEmail = decodeJwtEmail_(authToken);
+  cacheAuthToken(authToken, authEmail || '');
+  await enterApp();
+}
 
-  showToast('로그인 확인 중...');
-  const result = await checkAccessOnServer(idToken);
+/**
+ * 구글 ID 토큰(JWT)의 payload를 클라이언트에서 간단히 디코딩해 이메일만 뽑아냅니다.
+ * (화면 표시용일 뿐, 실제 검증은 서버에서 매번 다시 수행됩니다)
+ */
+function decodeJwtEmail_(token){
+  try{
+    const payloadB64 = token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/');
+    const json = decodeURIComponent(atob(payloadB64).split('').map(c=>'%'+('00'+c.charCodeAt(0).toString(16)).slice(-2)).join(''));
+    const payload = JSON.parse(json);
+    return payload.email ? String(payload.email).toLowerCase() : null;
+  }catch(e){ return null; }
+}
 
-  if (result.status === 'approved'){
-    authToken = idToken;
-    authEmail = result.email;
-    cacheAuthToken(authToken, authEmail);
-    setRole('editor');
-    showToast('편집자로 로그인되었습니다 (' + authEmail + ')');
-  } else if (result.status === 'pending'){
-    showToast(result.newRequest ? '권한 요청이 접수되었습니다. 편집자 승인을 기다려주세요.' : '아직 승인 대기 중입니다. 편집자에게 문의해주세요.', 'error');
-  } else {
-    showToast('로그인에 실패했습니다. 다시 시도해주세요.', 'error');
-  }
+async function enterApp(){
+  document.getElementById('loginGate').style.display = 'none';
+  document.getElementById('appRoot').style.display = 'block';
+  document.getElementById('app').innerHTML = `<div class="empty">게임 목록을 불러오는 중입니다...</div>`;
+  await loadGames();
+  render();
 }
 
 async function checkAccessOnServer(idToken){
@@ -1750,9 +1797,14 @@ document.getElementById('newGameBtn').addEventListener('click', ()=>{
 });
 
 (async function init(){
-  document.getElementById('app').innerHTML = `<div class="empty">게임 목록을 불러오는 중입니다...</div>`;
-  await loadGames();
-  render();
+  const cached = getCachedAuthToken();
+  if (cached){
+    authToken = cached.token;
+    authEmail = cached.email;
+    await enterApp();
+  } else {
+    showGate();
+  }
 })();
 </script>
 </body>
