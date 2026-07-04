@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>오거나이징 가이드</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root{
     --bg: #F6F6F3;
@@ -187,6 +188,15 @@
   .help-list ul li{margin-bottom:6px; font-size:13px; color:var(--ink-soft);}
   .help-list code{background:var(--bg); padding:1px 5px; border-radius:4px; font-family:var(--mono); font-size:12px;}
   .help-note{font-size:12px; color:var(--ink-soft); margin-top:14px; padding-top:12px; border-top:1px solid var(--line);}
+
+  .access-modal{max-width:480px; max-height:82vh; overflow-y:auto;}
+  .access-section{margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--line);}
+  .access-section:last-of-type{border-bottom:none; margin-bottom:8px;}
+  .access-section-title{font-size:12px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; margin-bottom:10px;}
+  .access-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; font-size:13px;}
+  .access-row span{font-family:var(--mono); font-size:12.5px; word-break:break-all;}
+  .access-actions{display:flex; gap:6px; flex-shrink:0;}
+  .access-empty{font-size:12.5px; color:var(--ink-soft); padding:6px 0;}
   .modal-actions{display:flex; gap:8px; justify-content:flex-end; margin-top:16px;}
   .footer-note{font-size:11.5px; color:var(--ink-soft); margin-top:26px; border-top:1px solid var(--line); padding-top:14px;}
 
@@ -259,6 +269,8 @@
   </div>
   <button class="btn btn-ghost" onclick="refreshGames()" title="다른 편집자의 변경사항 불러오기">↻ 새로고침</button>
   <button class="btn btn-ghost" onclick="showHelpModal()">이용 방법</button>
+  <button class="btn btn-ghost" id="accessBtn" style="display:none;" onclick="showAccessModal()">🔑 권한 관리</button>
+  <button class="btn btn-ghost" id="logoutBtn" style="display:none;" onclick="logout()">로그아웃</button>
   <button class="btn btn-primary" id="newGameBtn" style="display:none;">+ 새 가이드</button>
 </div>
 
@@ -285,7 +297,8 @@ let draggingLabel = null;
 let dragLabelOffset = null;
 let resizingLabel = null;
 let resizeLabelStart = null;
-let editorCode = '';
+let authToken = null;   // 구글 ID 토큰 (로그인 시 발급됨)
+let authEmail = null;   // 로그인된 사용자 이메일
 const _measureCanvas = document.createElement('canvas');
 
 /**
@@ -317,6 +330,8 @@ function showToast(message, type='info'){
 
 // 배포된 Apps Script 웹앱 URL
 const WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbz7Bwa0gOb5R2W_TBqUlHNjfTKAcu5CjbfAjR_0XVKvYr376gNLbq240FfopNuw6W8/exec';
+// 구글 클라우드 콘솔에서 발급받은 OAuth 클라이언트 ID
+const GOOGLE_CLIENT_ID = '674971767762-cimv1024n7u11stknpnbbq81lf2djaor.apps.googleusercontent.com';
 
 const SEED = [
   { id:'487', name:'캐스캐디아',
@@ -393,14 +408,14 @@ async function saveGames(gameId){
     const res = await fetch(WEB_APP_URL, {
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'}, // CORS 프리플라이트 회피용
-      body: JSON.stringify({ action:'saveGame', editorCode, game })
+      body: JSON.stringify({ action:'saveGame', idToken:authToken, game })
     });
     const result = await res.json();
     if (result.success){
-      cacheEditorCode(editorCode); // 저장이 잘 되면 10분 창을 갱신
+      cacheAuthToken(authToken, authEmail); // 저장이 잘 되면 세션 갱신
     } else {
-      showToast('저장 실패: 편집자 코드를 확인해주세요. (' + (result.error||'') + ')', 'error');
-      if (result.error === 'INVALID_CODE') clearCachedEditorCode();
+      showToast('저장 실패: 로그인 상태를 확인해주세요. (' + (result.error||'') + ')', 'error');
+      if (result.error === 'NOT_APPROVED') clearCachedAuthToken();
     }
   }catch(e){
     console.error('저장 실패', e);
@@ -417,7 +432,7 @@ async function deleteGameOnServer(gameId){
     const res = await fetch(WEB_APP_URL, {
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action:'deleteGame', editorCode, gameId })
+      body: JSON.stringify({ action:'deleteGame', idToken:authToken, gameId })
     });
     const result = await res.json();
     if (!result.success){
@@ -438,7 +453,10 @@ async function refreshGames(){
 
 function render(){
   const app = document.getElementById('app');
-  document.getElementById('newGameBtn').style.display = role==='editor' ? 'inline-block' : 'none';
+  const isEditor = role==='editor';
+  document.getElementById('newGameBtn').style.display = isEditor ? 'inline-block' : 'none';
+  document.getElementById('accessBtn').style.display = isEditor ? 'inline-block' : 'none';
+  document.getElementById('logoutBtn').style.display = isEditor ? 'inline-block' : 'none';
   currentGameId ? renderDetail(app) : renderList(app);
 }
 
@@ -949,8 +967,8 @@ function openCropModal(file){
     showToast('WEB_APP_URL이 아직 설정되지 않아 업로드할 수 없습니다.', 'error');
     return;
   }
-  if (!editorCode){
-    showToast('편집자 코드가 확인되지 않았습니다. 편집자 모드로 다시 전환해주세요.', 'error');
+  if (!authToken){
+    showToast('로그인이 확인되지 않았습니다. 편집자로 다시 로그인해주세요.', 'error');
     return;
   }
   const url = URL.createObjectURL(file);
@@ -1265,7 +1283,8 @@ function helpViewerContent_(){
 function helpEditorContent_(){
   return `
     <ul class="help-list">
-      <li><b>편집자 모드 전환</b> — 상단 "편집자" 버튼 클릭 후 편집자 코드를 입력합니다. 코드가 맞아야 저장이 가능합니다. (한 번 입력하면 10분간 다시 안 물어봅니다)</li>
+      <li><b>편집자 로그인</b> — 상단 "편집자" 버튼을 누르면 구글 로그인 창이 뜹니다. 승인된 구글 계정으로 로그인하면 바로 편집 가능합니다. 승인 안 된 계정이면 자동으로 승인 요청이 접수됩니다.</li>
+      <li><b>권한 관리</b> — 편집자 모드에서 "🔑 권한 관리" 버튼으로 승인 대기 중인 요청을 승인/거절하거나, 이메일을 직접 입력해서 요청 없이도 먼저 권한을 부여할 수 있습니다. 등록된 편집자는 언제든 삭제(권한 회수)할 수 있습니다.</li>
       <li><b>새 가이드 만들기</b> — 상단 "+ 새 가이드" 버튼으로 게임 ID·이름을 입력해 새로 생성합니다.</li>
       <li><b>사진 등록</b> — 사진 탭에서 "사진 업로드" 또는 사진 영역에 파일을 끌어다 놓으면, 자르기(크롭)·이동·확대·축소 편집창이 뜹니다. 필요한 부분만 선택해서 적용하세요. "+ 사진 페이지 추가"로 사진을 여러 장 등록하고 넘겨가며 관리할 수 있습니다.</li>
       <li><b>마커(케이스 위치) 추가·편집</b> — 사진의 빈 곳을 클릭하면 새 마커와 텍스트박스가 생깁니다. 마커와 텍스트박스는 각각 드래그로 위치를 옮길 수 있고, 텍스트박스 안에서 케이스종류·구성품명·수량을 바로 수정할 수 있습니다.</li>
@@ -1479,73 +1498,235 @@ function removeCaseEverywhere(g, caseIdx){
 
 document.getElementById('searchInput').addEventListener('input', e=>{ searchQuery=e.target.value.trim(); render(); });
 document.getElementById('roleViewerBtn').addEventListener('click', ()=>setRole('viewer'));
-document.getElementById('roleEditorBtn').addEventListener('click', ()=>setRole('editor'));
-const EDITOR_CODE_TTL_MS = 10 * 60 * 1000; // 10분
+document.getElementById('roleEditorBtn').addEventListener('click', ()=>enterEditorMode());
 
-function getCachedEditorCode(){
+const AUTH_TTL_MS = 50 * 60 * 1000; // 구글 ID 토큰 유효시간(~1시간)보다 약간 짧게
+
+function getCachedAuthToken(){
   try{
-    const code = localStorage.getItem('editorCode');
-    const ts = Number(localStorage.getItem('editorCodeTime') || 0);
-    if (code && (Date.now() - ts) < EDITOR_CODE_TTL_MS) return code;
-  }catch(e){ /* localStorage 사용 불가 환경이면 그냥 매번 물어봄 */ }
+    const token = localStorage.getItem('authToken');
+    const email = localStorage.getItem('authEmail');
+    const ts = Number(localStorage.getItem('authTokenTime') || 0);
+    if (token && email && (Date.now()-ts) < AUTH_TTL_MS) return { token, email };
+  }catch(e){ /* localStorage 사용 불가 환경이면 그냥 매번 로그인 */ }
   return null;
 }
-function cacheEditorCode(code){
+function cacheAuthToken(token, email){
   try{
-    localStorage.setItem('editorCode', code);
-    localStorage.setItem('editorCodeTime', String(Date.now()));
+    localStorage.setItem('authToken', token);
+    localStorage.setItem('authEmail', email);
+    localStorage.setItem('authTokenTime', String(Date.now()));
   }catch(e){}
 }
-function clearCachedEditorCode(){
+function clearCachedAuthToken(){
   try{
-    localStorage.removeItem('editorCode');
-    localStorage.removeItem('editorCodeTime');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('authEmail');
+    localStorage.removeItem('authTokenTime');
   }catch(e){}
+  authToken = null; authEmail = null;
 }
 
-async function setRole(r){
-  if (r === 'editor' && role !== 'editor'){
-    const cached = getCachedEditorCode();
-    if (cached){
-      editorCode = cached;
-      cacheEditorCode(cached); // 계속 쓰는 중이면 10분 창을 갱신(연장)
-    } else {
-      const code = prompt('편집자 코드를 입력해주세요.');
-      if (!code) return;
-
-      if (WEB_APP_URL === 'YOUR_WEB_APP_URL'){
-        editorCode = code; // 데모 모드(서버 미연결)에서는 검증 없이 통과
-      } else {
-        showToast('코드 확인 중...');
-        const valid = await verifyEditorCode(code);
-        if (!valid){
-          showToast('편집자 코드가 올바르지 않습니다.', 'error');
-          return;
-        }
-        editorCode = code;
-        cacheEditorCode(code);
-      }
-    }
+/**
+ * "편집자" 버튼 클릭 시 호출됩니다.
+ * 캐시된 로그인이 유효하면 바로 편집자 모드로, 아니면 구글 로그인 창을 띄웁니다.
+ */
+function enterEditorMode(){
+  const cached = getCachedAuthToken();
+  if (cached){
+    authToken = cached.token; authEmail = cached.email;
+    setRole('editor');
+    return;
   }
-  role=r;
+  showLoginModal();
+}
+
+function setRole(r){
+  role = r;
   document.getElementById('roleViewerBtn').classList.toggle('active', r==='viewer');
   document.getElementById('roleEditorBtn').classList.toggle('active', r==='editor');
   render();
 }
 
-async function verifyEditorCode(code){
+function logout(){
+  clearCachedAuthToken();
+  setRole('viewer');
+  showToast('로그아웃되었습니다.');
+}
+
+/**
+ * ============================================================
+ * 구글 로그인
+ * ============================================================
+ */
+function showLoginModal(){
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.id = 'loginBackdrop';
+  backdrop.innerHTML = `
+    <div class="modal">
+      <h3>편집자 로그인</h3>
+      <p style="font-size:12.5px; color:var(--ink-soft); margin-top:-8px; line-height:1.5;">권한이 있는 구글 계정으로 로그인해주세요. 권한이 없는 계정이면 요청이 자동으로 접수되어, 승인된 편집자가 확인 후 승인해드립니다.</p>
+      <div id="gsiButtonContainer" style="display:flex; justify-content:center; margin:16px 0;"></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="document.getElementById('loginBackdrop').remove()">취소</button>
+      </div>
+    </div>`;
+  document.body.appendChild(backdrop);
+
+  if (typeof google === 'undefined' || !google.accounts || !google.accounts.id){
+    document.getElementById('gsiButtonContainer').innerHTML = '<div style="color:var(--danger); font-size:13px; text-align:center;">구글 로그인 라이브러리를 불러오지 못했습니다.<br>인터넷 연결을 확인 후 새로고침 해주세요.</div>';
+    return;
+  }
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogleCredential
+  });
+  google.accounts.id.renderButton(document.getElementById('gsiButtonContainer'), { theme:'outline', size:'large', width:280 });
+}
+
+async function handleGoogleCredential(response){
+  const idToken = response.credential;
+  const backdrop = document.getElementById('loginBackdrop');
+  if (backdrop) backdrop.remove();
+
+  showToast('로그인 확인 중...');
+  const result = await checkAccessOnServer(idToken);
+
+  if (result.status === 'approved'){
+    authToken = idToken;
+    authEmail = result.email;
+    cacheAuthToken(authToken, authEmail);
+    setRole('editor');
+    showToast('편집자로 로그인되었습니다 (' + authEmail + ')');
+  } else if (result.status === 'pending'){
+    showToast(result.newRequest ? '권한 요청이 접수되었습니다. 편집자 승인을 기다려주세요.' : '아직 승인 대기 중입니다. 편집자에게 문의해주세요.', 'error');
+  } else {
+    showToast('로그인에 실패했습니다. 다시 시도해주세요.', 'error');
+  }
+}
+
+async function checkAccessOnServer(idToken){
   try{
     const res = await fetch(WEB_APP_URL, {
       method:'POST',
       headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify({ action:'verifyCode', editorCode: code })
+      body: JSON.stringify({ action:'checkAccess', idToken })
     });
-    const result = await res.json();
-    return !!result.success;
+    return await res.json();
   }catch(e){
     console.error(e);
-    showToast('코드 확인 중 오류가 발생했습니다. 네트워크 상태를 확인해주세요.', 'error');
-    return false;
+    showToast('로그인 확인 중 오류가 발생했습니다.', 'error');
+    return { status: 'error' };
+  }
+}
+
+/**
+ * ============================================================
+ * 권한 관리 (승인된 편집자만 접근 가능)
+ * ============================================================
+ */
+async function showAccessModal(){
+  if (!authToken){ showToast('로그인이 필요합니다.', 'error'); return; }
+  showToast('권한 목록 불러오는 중...');
+  const data = await fetchAccessList();
+  if (!data || !data.success){
+    showToast('권한 목록을 불러오지 못했습니다. (' + (data && data.error || '') + ')', 'error');
+    return;
+  }
+  renderAccessModal(data.approved, data.pending);
+}
+
+async function fetchAccessList(){
+  try{
+    const res = await fetch(WEB_APP_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'listAccess', idToken:authToken })
+    });
+    return await res.json();
+  }catch(e){
+    console.error(e);
+    return null;
+  }
+}
+
+function renderAccessModal(approved, pending){
+  const old = document.getElementById('accessBackdrop');
+  if (old) old.remove();
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.id = 'accessBackdrop';
+  backdrop.innerHTML = `
+    <div class="modal access-modal">
+      <h3>권한 관리</h3>
+      <div class="access-section">
+        <div class="access-section-title">승인 대기 중 (${pending.length})</div>
+        ${pending.length ? pending.map(email=>`
+          <div class="access-row">
+            <span>${email}</span>
+            <div class="access-actions">
+              <button class="btn btn-primary" style="padding:5px 10px; font-size:12px;" onclick="approveEmail('${email}')">승인</button>
+              <button class="btn btn-ghost" style="padding:5px 10px; font-size:12px;" onclick="rejectEmail('${email}')">거절</button>
+            </div>
+          </div>`).join('') : '<div class="access-empty">대기 중인 요청이 없습니다.</div>'}
+      </div>
+      <div class="access-section">
+        <div class="access-section-title">승인된 편집자 (${approved.length})</div>
+        ${approved.length ? approved.map(email=>`
+          <div class="access-row">
+            <span>${email}</span>
+            <button class="btn btn-ghost" style="padding:5px 10px; font-size:12px;" onclick="removeApprovedEmail('${email}')">삭제</button>
+          </div>`).join('') : '<div class="access-empty">등록된 편집자가 없습니다.</div>'}
+      </div>
+      <div class="access-section">
+        <div class="access-section-title">이메일로 직접 등록 (요청 없이 먼저 권한 부여)</div>
+        <div class="access-row">
+          <input type="email" id="newApprovedEmail" placeholder="example@gmail.com" style="flex:1; border:1px solid var(--line); border-radius:6px; padding:7px 9px; font-size:13px;">
+          <button class="btn btn-primary" style="padding:7px 12px; font-size:12px;" onclick="addApprovedEmailFromInput()">등록</button>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-primary" onclick="document.getElementById('accessBackdrop').remove()">닫기</button>
+      </div>
+    </div>`;
+  document.body.appendChild(backdrop);
+}
+
+async function approveEmail(email){
+  await postAccessAction('approveRequest', email);
+  showAccessModal();
+}
+async function rejectEmail(email){
+  if (!confirm(email + ' 요청을 거절할까요?')) return;
+  await postAccessAction('rejectRequest', email);
+  showAccessModal();
+}
+async function removeApprovedEmail(email){
+  if (!confirm(email + '의 편집 권한을 삭제할까요?')) return;
+  await postAccessAction('removeApprovedEmail', email);
+  showAccessModal();
+}
+function addApprovedEmailFromInput(){
+  const input = document.getElementById('newApprovedEmail');
+  const email = input.value.trim();
+  if (!email || email.indexOf('@')===-1){ showToast('올바른 이메일을 입력해주세요.', 'error'); return; }
+  postAccessAction('addApprovedEmail', email).then(()=> showAccessModal());
+}
+async function postAccessAction(action, targetEmail){
+  try{
+    const res = await fetch(WEB_APP_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action, idToken:authToken, targetEmail })
+    });
+    const result = await res.json();
+    if (!result.success) showToast('처리 실패: ' + (result.error||''), 'error');
+    else showToast('처리되었습니다.');
+  }catch(e){
+    console.error(e);
+    showToast('서버 오류가 발생했습니다.', 'error');
   }
 }
 document.getElementById('newGameBtn').addEventListener('click', ()=>{
