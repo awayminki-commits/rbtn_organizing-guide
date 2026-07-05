@@ -542,7 +542,7 @@ function renderDashboard(app){
   });
 
   const rows = filtered.map(g=>{
-    const hasPhoto = (g.photos||[]).some(p=>p.imageUrl);
+    const hasPhoto = g.hasPhoto != null ? g.hasPhoto : (g.photos||[]).some(p=>p.imageUrl);
     const storeCount = (g.completedBy||[]).length;
     return `<tr>
       <td class="dash-id">${g.id}</td>
@@ -1587,7 +1587,37 @@ function changeLabelFontSize(li, delta){
 
 let gameNoteExpanded = false;
 
-function openGame(id){ currentGameId=id; currentMode='1'; currentPhotoIdx=0; gameNoteExpanded=false; showDashboard=false; render(); }
+async function openGame(id){
+  currentGameId=id; currentMode='1'; currentPhotoIdx=0; gameNoteExpanded=false; showDashboard=false;
+  document.getElementById('app').innerHTML = `<div class="empty">불러오는 중...</div>`;
+  await fetchFullGame_(id);
+  render();
+}
+
+/**
+ * 목록/대시보드에는 사진 데이터가 빠진 가벼운 버전만 있으므로,
+ * 게임을 열 때 사진을 포함한 전체 데이터를 따로 불러와 games 배열에 채워 넣습니다.
+ */
+async function fetchFullGame_(id){
+  try{
+    const res = await fetch(WEB_APP_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'getGame', idToken:authToken, gameId:id })
+    });
+    const result = await res.json();
+    if (result.success && result.game){
+      const idx = games.findIndex(g=>g.id===id);
+      if (idx !== -1) games[idx] = result.game;
+      else games.push(result.game);
+    } else {
+      showToast('게임 데이터를 불러오지 못했습니다. (' + (result.error||'') + ')', 'error');
+    }
+  }catch(e){
+    console.error(e);
+    showToast('서버 오류가 발생했습니다.', 'error');
+  }
+}
 function closeGame(){ currentGameId=null; showDashboard=false; render(); }
 
 function renderGameNote_(g){
@@ -2307,12 +2337,14 @@ document.getElementById('newGameBtn').addEventListener('click', ()=>{
       <button class="btn btn-primary" id="createConfirm">생성</button>
     </div></div>`;
   document.body.appendChild(backdrop);
-  document.getElementById('createConfirm').addEventListener('click', ()=>{
+  document.getElementById('createConfirm').addEventListener('click', async ()=>{
     const id = document.getElementById('newId').value.trim();
     const name = document.getElementById('newName').value.trim();
     if (!id || !name){ showToast('게임 ID와 게임명을 입력해주세요.', 'error'); return; }
     games.push({id, name, cases:[], photos:[{markers:[]}]});
-    saveGames(id); backdrop.remove(); openGame(id);
+    await saveGames(id);
+    backdrop.remove();
+    openGame(id);
   });
 });
 
