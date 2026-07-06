@@ -195,7 +195,7 @@
   .label-toolbar button{border:none; background:none; color:var(--ink); font-size:11px; padding:2px 6px; cursor:pointer; border-radius:4px; font-family:var(--sans);}
   .label-toolbar button:hover{background:var(--bg);}
   .label-toolbar .label-del:hover{color:var(--danger);}
-  .photo-label{background:#000; color:#fff; font-family:var(--sans); font-weight:600; white-space:pre-wrap; padding:0.5em 0.7em; border-radius:0.25em; line-height:1.35; box-shadow:0 2px 8px rgba(0,0,0,.35); outline:none; max-width:20em; min-width:1.4em; min-height:1em; text-align:center;}
+  .photo-label{background:#000; color:#fff; font-family:var(--sans); font-weight:600; white-space:pre-wrap; padding:0.5em 0.7em; border-radius:0.25em; line-height:1.35; box-shadow:0 2px 8px rgba(0,0,0,.35); outline:none; max-width:20em; min-width:1.4em; min-height:1em; text-align:center; transform-origin:center center;}
   .photo-label:focus{box-shadow:0 0 0 2px var(--accent);}
   .label-resize{position:absolute; right:-5px; bottom:-5px; width:13px; height:13px; background:#fff; border:2px solid #000; border-radius:2px; cursor:nwse-resize; z-index:2;}
   .hint{font-size:12px; color:var(--ink-soft); margin-top:10px;}
@@ -1060,6 +1060,7 @@ function attachPhotoHandlers(g){
         labelEl.style.height = (h * hPct / 100) + 'px';
         labelEl.style.overflow = 'hidden';
       }
+      labelEl.style.transform = `rotate(${lbl.rotation||0}deg)`;
       labelEl.textContent = lbl.text;
 
       if (editable){
@@ -1075,6 +1076,7 @@ function attachPhotoHandlers(g){
           <span class="label-drag" title="이동">⠿</span>
           <button title="글자 작게" onclick="changeLabelFontSize(${li},-1)">A-</button>
           <button title="글자 크게" onclick="changeLabelFontSize(${li},1)">A+</button>
+          <button title="라벨 회전 (90도씩)" onclick="rotateLabel(${li})">⟳</button>
           <button class="label-del" title="삭제" onclick="deleteLabel(${li})">✕</button>
         `;
         toolbar.querySelector('.label-drag').addEventListener('pointerdown', e=>{
@@ -1596,7 +1598,7 @@ function helpEditorContent_(){
       <li><b>사진 등록</b> — 사진 탭에서 "사진 업로드" 또는 사진 영역에 파일을 끌어다 놓으면, 회전·자르기(크롭)·이동·확대·축소 편집창이 뜹니다. 회전 버튼으로 사진 방향을 바로잡고, 축소 슬라이더 아래 미리보기에서 실제 저장될 모습을 그대로 확인할 수 있습니다. "+ 사진 페이지 추가"로 사진을 여러 장 등록하고 넘겨가며 관리할 수 있습니다.</li>
       <li><b>마커(케이스 위치) 추가·편집</b> — 사진의 빈 곳을 클릭하면 새 마커와 텍스트박스가 생깁니다. 마커와 텍스트박스는 각각 드래그로 위치를 옮길 수 있고, 텍스트박스 안에서 케이스종류·구성품명·수량을 바로 수정할 수 있습니다.</li>
       <li><b>표 기준 마커 자동 생성</b> — 표에는 등록돼있지만 아직 사진에 마커가 없는 케이스들을, "📍 표 기준 마커 자동 생성" 버튼으로 한 번에 격자 배치할 수 있습니다. 이후 실제 배치에 맞게 위치만 드래그로 옮겨주면 됩니다. (일괄로 데이터만 먼저 등록한 게임에 유용합니다)</li>
-      <li><b>라벨 미리보기</b> — 텍스트박스 상단의 검정 "라벨" 버튼을 누르면, 실제 라벨기로 인쇄해 붙였을 때의 모습(검정 바탕 흰 글씨)을 미리 볼 수 있는 박스가 따로 생깁니다. 내용 수정, 줄바꿈, 글자 크기 조절(A-/A+), 모서리 드래그로 크기 조절(글자도 같이 커짐/작아짐)이 모두 가능합니다.</li>
+      <li><b>라벨 미리보기</b> — 텍스트박스 상단의 검정 "라벨" 버튼을 누르면, 실제 라벨기로 인쇄해 붙였을 때의 모습(검정 바탕 흰 글씨)을 미리 볼 수 있는 박스가 따로 생깁니다. 내용 수정, 줄바꿈, 글자 크기 조절(A-/A+), 모서리 드래그로 크기 조절(글자도 같이 커짐/작아짐), ⟳ 버튼으로 90도씩 회전(세로로 붙여야 하는 라벨 등)이 모두 가능합니다.</li>
       <li><b>표에서 직접 수정</b> — 표 탭에서도 케이스종류·구성품·수량·비고를 셀에서 바로 편집하거나, 케이스/항목을 추가·삭제할 수 있습니다. 사진과 표는 같은 데이터를 공유합니다.</li>
       <li><b>비고(메모)</b> — 텍스트박스 하단의 "+ 비고" 버튼을 누르면 메모칸이 나타납니다. 카드가 프로텍터 기준인지 코팅 기준인지, 토큰에 코인 캡슐을 쓰는지 등을 적어두면 표 탭의 "비고" 열에도 똑같이 반영됩니다. 선택 사항이라 안 적으면 표시되지 않습니다.</li>
       <li><b>게임 전체 메모</b> — 이건 특정 구성품이 아니라 게임 전체에 대한 메모입니다. 게임 제목 옆의 "+ 게임 메모"로 추가하며, 사진 탭·표 탭 어디서 보든 동일하게 상단에 나타납니다.</li>
@@ -1647,6 +1649,18 @@ function changeLabelFontSize(li, delta){
   const current = lbl.fontSizePct != null ? lbl.fontSizePct : ((lbl.fontSize||14)/650*100);
   lbl.fontSizePct = Math.max(0.4, Math.min(20, current + delta*0.3));
   delete lbl.fontSize;
+  saveGames();
+  render();
+}
+
+/**
+ * 라벨을 90도씩 회전시킵니다. 실제로 세로로 붙여야 하는 케이스 등에 사용합니다.
+ */
+function rotateLabel(li){
+  const g = games.find(x=>x.id===currentGameId);
+  const photo = g.photos[currentPhotoIdx];
+  const lbl = photo.labels[li];
+  lbl.rotation = ((lbl.rotation || 0) + 90) % 360;
   saveGames();
   render();
 }
