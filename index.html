@@ -1299,6 +1299,33 @@ function attachPhotoHandlers(g){
   }
 
   let currentUiScale = 1;
+  let labelRectsCache = []; // 정렬 가이드용: 매번 그릴 때 각 라벨의 실제 화면 위치를 저장해둠
+
+  /**
+   * 라벨을 드래그할 때, 다른 라벨과 가장자리/중앙이 맞으면 빨간 점선으로 표시합니다.
+   * (파워포인트의 스마트 가이드와 같은 개념) x/y가 null이면 해당 방향 가이드를 지웁니다.
+   */
+  function renderAlignGuides_(xPos, yPos){
+    let guideLayer = stage.querySelector('#alignGuideLayer');
+    if (!guideLayer){
+      guideLayer = document.createElement('div');
+      guideLayer.id = 'alignGuideLayer';
+      guideLayer.style.cssText = 'position:absolute; inset:0; pointer-events:none; z-index:9; overflow:hidden;';
+      stage.appendChild(guideLayer);
+    }
+    guideLayer.innerHTML = '';
+    if (xPos != null){
+      const line = document.createElement('div');
+      line.style.cssText = `position:absolute; left:${xPos}px; top:0; bottom:0; border-left:1.5px dashed #ff4444;`;
+      guideLayer.appendChild(line);
+    }
+    if (yPos != null){
+      const line = document.createElement('div');
+      line.style.cssText = `position:absolute; top:${yPos}px; left:0; right:0; border-top:1.5px dashed #ff4444;`;
+      guideLayer.appendChild(line);
+    }
+  }
+
 
   function draw(){
     const w = stage.clientWidth, h = stage.clientHeight;
@@ -1408,6 +1435,7 @@ function attachPhotoHandlers(g){
   function drawLabels(){
     const w = stage.clientWidth, h = stage.clientHeight;
     labelLayer.innerHTML = '';
+    labelRectsCache = [];
 
     photo.labels.forEach((lbl, li) => {
       // 구버전 호환: 예전엔 절대 px(fontSize/width/height, 기준폭 650px)로 저장했음 → % 값으로 환산
@@ -1447,6 +1475,19 @@ function attachPhotoHandlers(g){
       wrap.appendChild(rotateGroup);
       labelLayer.appendChild(wrap); // 실제 위치/크기를 측정하려면 먼저 화면(DOM)에 붙어있어야 함
 
+      {
+        const stageRectNow = stage.getBoundingClientRect();
+        const wrapRectFinal = wrap.getBoundingClientRect();
+        labelRectsCache[li] = {
+          left: wrapRectFinal.left - stageRectNow.left,
+          top: wrapRectFinal.top - stageRectNow.top,
+          right: wrapRectFinal.right - stageRectNow.left,
+          bottom: wrapRectFinal.bottom - stageRectNow.top,
+          centerX: (wrapRectFinal.left + wrapRectFinal.right)/2 - stageRectNow.left,
+          centerY: (wrapRectFinal.top + wrapRectFinal.bottom)/2 - stageRectNow.top
+        };
+      }
+
       if (editable){
         labelEl.contentEditable = 'true';
         labelEl.addEventListener('blur', ()=>{
@@ -1478,7 +1519,7 @@ function attachPhotoHandlers(g){
         toolbar.querySelector('.label-drag').addEventListener('pointerdown', e=>{
           draggingLabel = li;
           const wrapRect2 = wrap.getBoundingClientRect();
-          dragLabelOffset = { dx: e.clientX - wrapRect2.left, dy: e.clientY - wrapRect2.top };
+          dragLabelOffset = { dx: e.clientX - wrapRect2.left, dy: e.clientY - wrapRect2.top, size: { width: wrapRect2.width, height: wrapRect2.height } };
           e.stopPropagation();
         });
         wrap.appendChild(toolbar);
@@ -1533,6 +1574,30 @@ function attachPhotoHandlers(g){
         const cy = e.clientY - dragLabelOffset.dy;
         let x=(cx-rect.left)/rect.width*100, y=(cy-rect.top)/rect.height*100;
         x=Math.max(0,Math.min(98,x)); y=Math.max(0,Math.min(98,y));
+
+        // 정렬 가이드: 다른 라벨들의 테두리/중앙과 가까워지면 딱 맞춰서(스냅) 점선으로 표시
+        const SNAP_PX = 6;
+        const size = dragLabelOffset.size || {width:60, height:30};
+        const curLeft = x/100*rect.width, curTop = y/100*rect.height;
+        const curRight = curLeft + size.width, curBottom = curTop + size.height;
+        const curCenterX = curLeft + size.width/2, curCenterY = curTop + size.height/2;
+
+        let bestX = null, bestY = null;
+        labelRectsCache.forEach((r, idx)=>{
+          if (!r || idx === draggingLabel) return;
+          [[curLeft, r.left, 0], [curRight, r.right, -size.width], [curCenterX, r.centerX, -size.width/2]].forEach(([cur, target, adj])=>{
+            const diff = Math.abs(cur - target);
+            if (diff < SNAP_PX && (!bestX || diff < bestX.diff)) bestX = { diff, snap: target+adj, guidePos: target };
+          });
+          [[curTop, r.top, 0], [curBottom, r.bottom, -size.height], [curCenterY, r.centerY, -size.height/2]].forEach(([cur, target, adj])=>{
+            const diff = Math.abs(cur - target);
+            if (diff < SNAP_PX && (!bestY || diff < bestY.diff)) bestY = { diff, snap: target+adj, guidePos: target };
+          });
+        });
+        if (bestX) x = (bestX.snap/rect.width)*100;
+        if (bestY) y = (bestY.snap/rect.height)*100;
+
+        renderAlignGuides_(bestX ? bestX.guidePos : null, bestY ? bestY.guidePos : null);
         photo.labels[draggingLabel].x = x; photo.labels[draggingLabel].y = y;
         drawLabels();
       } else if (resizingLabel!==null){
@@ -1573,6 +1638,7 @@ function attachPhotoHandlers(g){
       }
       if (draggingLabel!==null || resizingLabel!==null){
         draggingLabel=null; resizingLabel=null; dragLabelOffset=null; resizeLabelStart=null; debouncedSaveGames();
+        renderAlignGuides_(null, null); // 드래그 끝나면 가이드선 지움
       }
     };
     stage.ondblclick = e=>{
