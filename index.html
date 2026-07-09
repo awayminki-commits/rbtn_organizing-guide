@@ -2240,7 +2240,15 @@ function removeCaseEverywhere(g, caseIdx){
   });
 }
 
-document.getElementById('searchInput').addEventListener('input', e=>{ searchQuery=e.target.value.trim(); render(); });
+document.getElementById('searchInput').addEventListener('input', e=>{
+  searchQuery = e.target.value.trim();
+  if (currentGameId){
+    flushPendingSave_(currentGameId); // 보던 게임에 저장 대기 중인 내용이 있으면 먼저 확정
+    currentGameId = null;
+    showDashboard = false;
+  }
+  render();
+});
 
 // 모든 팝업(모달) 공통: 바깥 회색 영역을 클릭하면 닫히도록 처리
 document.addEventListener('click', (e)=>{
