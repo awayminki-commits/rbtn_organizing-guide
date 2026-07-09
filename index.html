@@ -515,9 +515,42 @@ async function manualSaveGame(){
   }
   const btn = document.getElementById('manualSaveBtn');
   if (btn){ btn.disabled = true; btn.textContent = '저장 중...'; }
+  showSaveProgressBar_();
   const ok = await saveGames(gameId);
+  hideSaveProgressBar_();
   if (btn){ btn.disabled = false; btn.textContent = '💾 지금 저장'; }
   if (ok) showToast('저장되었습니다.');
+}
+
+/**
+ * 저장은 서버에 한 번 요청 보내고 응답 오는 구조라, 중간 진행률을 정확히 알
+ * 방법은 없습니다. 대신 점점 채워지다가 완료 시 바로 100%로 마무리되는
+ * 표시로 "진행되고 있다"는 걸 보여줍니다.
+ */
+let saveProgressInterval_ = null;
+function showSaveProgressBar_(){
+  const wrap = document.getElementById('saveProgressWrap');
+  const fill = document.getElementById('saveProgressFill');
+  if (!wrap || !fill) return;
+  wrap.style.display = 'block';
+  fill.style.transition = 'width .25s linear';
+  fill.style.width = '0%';
+  let pct = 0;
+  clearInterval(saveProgressInterval_);
+  saveProgressInterval_ = setInterval(()=>{
+    pct += (90 - pct) * 0.12 + 0.5; // 처음엔 빠르게, 90%에 가까워질수록 천천히
+    if (pct > 90) pct = 90;
+    fill.style.width = pct + '%';
+  }, 200);
+}
+function hideSaveProgressBar_(){
+  clearInterval(saveProgressInterval_);
+  const wrap = document.getElementById('saveProgressWrap');
+  const fill = document.getElementById('saveProgressFill');
+  if (!fill){ return; }
+  fill.style.transition = 'width .2s ease-out';
+  fill.style.width = '100%';
+  setTimeout(()=>{ if (wrap) wrap.style.display = 'none'; }, 350);
 }
 
 /**
@@ -1108,6 +1141,11 @@ function renderDetail(app){
           <div style="display:flex; gap:8px; margin-top:10px;">
             <button class="btn btn-primary" id="manualSaveBtn" style="padding:8px 16px; font-size:13px;" onclick="manualSaveGame()">💾 지금 저장</button>
             <button class="btn btn-ghost" style="padding:8px 14px; font-size:13px;" onclick="showHistoryModal('${g.id}')">🕐 이전 버전</button>
+          </div>
+          <div id="saveProgressWrap" style="display:none; width:220px; margin-top:8px;">
+            <div class="dash-progress-bar-track" style="height:6px;">
+              <div class="dash-progress-bar-fill" id="saveProgressFill" style="width:0%;"></div>
+            </div>
           </div>` : ''}
       </div>
       <div class="game-note-area">${renderGameNote_(g)}</div>
