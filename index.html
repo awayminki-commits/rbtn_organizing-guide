@@ -189,15 +189,15 @@
   .anno-label-btn:hover{background:#2a2a2a;}
 
   .photo-label-wrap{position:absolute; z-index:6;}
-  .label-toolbar{position:absolute; top:-24px; left:0; display:flex; align-items:center; gap:2px; background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:2px; box-shadow:0 2px 6px rgba(0,0,0,.15); white-space:nowrap;}
+  .label-toolbar{position:absolute; top:-24px; left:0; display:flex; align-items:center; gap:2px; background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:2px; box-shadow:0 2px 6px rgba(0,0,0,.15); white-space:nowrap; z-index:10;}
   .label-drag{cursor:grab; padding:2px 5px; color:var(--ink-soft); font-size:12px; user-select:none;}
   .label-drag:active{cursor:grabbing;}
   .label-toolbar button{border:none; background:none; color:var(--ink); font-size:11px; padding:2px 6px; cursor:pointer; border-radius:4px; font-family:var(--sans);}
   .label-toolbar button:hover{background:var(--bg);}
   .label-toolbar .label-del:hover{color:var(--danger);}
-  .photo-label{background:#000; color:#fff; font-family:var(--sans); font-weight:600; white-space:pre-wrap; padding:0.5em 0.7em; border-radius:0.25em; line-height:1.35; box-shadow:0 2px 8px rgba(0,0,0,.35); outline:none; max-width:20em; min-width:1.4em; min-height:1em; text-align:center; transform-origin:center center;}
+  .photo-label{background:#000; color:#fff; font-family:var(--sans); font-weight:600; white-space:pre-wrap; padding:0.5em 0.7em; border-radius:0.25em; line-height:1.35; box-shadow:0 2px 8px rgba(0,0,0,.35); outline:none; max-width:20em; min-width:1.4em; min-height:1em; text-align:center; transform-origin:center center; display:flex; align-items:center; justify-content:center; box-sizing:border-box; position:relative; z-index:1;}
   .photo-label:focus{box-shadow:0 0 0 2px var(--accent);}
-  .label-resize{position:absolute; right:-5px; bottom:-5px; width:13px; height:13px; background:#fff; border:2px solid #000; border-radius:2px; cursor:nwse-resize; z-index:2;}
+  .label-resize{position:absolute; right:-5px; bottom:-5px; width:13px; height:13px; background:#fff; border:2px solid #000; border-radius:2px; cursor:nwse-resize; z-index:10;}
   .hint{font-size:12px; color:var(--ink-soft); margin-top:10px;}
   .legend{display:flex; flex-wrap:wrap; gap:6px; margin-top:14px;}
 
@@ -1511,12 +1511,11 @@ function attachPhotoHandlers(g){
         const dy = e.clientY - resizeLabelStart.startY;
         const newW = Math.max(20, resizeLabelStart.startW + dx);
         const newH = Math.max(14, resizeLabelStart.startH + dy);
-        const scale = Math.max(newW/resizeLabelStart.startW, newH/resizeLabelStart.startH);
         // 화면 폭(w)/높이(h) 대비 %로 저장 → 어떤 화면 크기에서도 항상 사진과 같은 비율로 재계산됨
         lbl.widthPct = (newW / rect.width) * 100;
         lbl.heightPct = (newH / rect.height) * 100;
         lbl.sized = true;
-        lbl.fontSizePct = Math.max(0.4, Math.min(20, resizeLabelStart.startFontSizePct * scale));
+        // 글자 크기는 A-/A+로 설정한 값 그대로 유지 (박스 크기와 별개)
         delete lbl.width; delete lbl.height; delete lbl.fontSize; // 구버전 필드 정리
         drawLabels();
       }
