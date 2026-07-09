@@ -1489,10 +1489,12 @@ function attachPhotoHandlers(g){
         resizeHandle.style.top = (relBottom - 6) + 'px';
         resizeHandle.addEventListener('pointerdown', e=>{
           resizingLabel = li;
+          const stageRect = stage.getBoundingClientRect();
           const groupRect2 = rotateGroup.getBoundingClientRect();
           resizeLabelStart = {
-            startX: e.clientX, startY: e.clientY,
-            startW: groupRect2.width, startH: groupRect2.height,
+            anchorLeft: groupRect2.left - stageRect.left, // 화면상 왼쪽위 모서리(스테이지 기준) - 이 지점을 고정합니다
+            anchorTop: groupRect2.top - stageRect.top,
+            rotation: rotation,
             startFontSizePct: fsPct
           };
           e.stopPropagation();
@@ -1533,14 +1535,31 @@ function attachPhotoHandlers(g){
         drawLabels();
       } else if (resizingLabel!==null){
         const lbl = photo.labels[resizingLabel];
-        const dx = e.clientX - resizeLabelStart.startX;
-        const dy = e.clientY - resizeLabelStart.startY;
-        const newW = Math.max(20, resizeLabelStart.startW + dx);
-        const newH = Math.max(14, resizeLabelStart.startH + dy);
-        // 화면 폭(w)/높이(h) 대비 %로 저장 → 어떤 화면 크기에서도 항상 사진과 같은 비율로 재계산됨
-        lbl.widthPct = (newW / rect.width) * 100;
-        lbl.heightPct = (newH / rect.height) * 100;
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+        // 화면상 오른쪽 아래(마우스)가 왼쪽위 고정점(anchor) 기준으로 얼마나 떨어져 있는지 = 화면에 보이는 크기
+        const visualW = Math.max(20, mouseX - resizeLabelStart.anchorLeft);
+        const visualH = Math.max(14, mouseY - resizeLabelStart.anchorTop);
+
+        lbl.widthPct = (visualW / rect.width) * 100;
+        lbl.heightPct = (visualH / rect.height) * 100;
         lbl.sized = true;
+
+        // 90/270도면 실제 라벨 요소의 가로/세로가 서로 바뀌어 적용되므로(렌더링과 동일 로직),
+        // 회전축이 중앙이라 생기는 위치 밀림을 아래에서 보정합니다.
+        const rot = resizeLabelStart.rotation || 0;
+        const swappedNow = (rot===90 || rot===270);
+        const localW = swappedNow ? visualH : visualW;
+        const localH = swappedNow ? visualW : visualH;
+        const offsetX = (localW - visualW) / 2;
+        const offsetY = (localH - visualH) / 2;
+
+        // 화면상 왼쪽위가 고정되도록 라벨의 위치(x/y)도 함께 보정합니다.
+        const newWrapLeft = resizeLabelStart.anchorLeft - offsetX;
+        const newWrapTop = resizeLabelStart.anchorTop - offsetY;
+        lbl.x = Math.max(0, Math.min(98, (newWrapLeft / rect.width) * 100));
+        lbl.y = Math.max(0, Math.min(98, (newWrapTop / rect.height) * 100));
+
         // 글자 크기는 A-/A+로 설정한 값 그대로 유지 (박스 크기와 별개)
         delete lbl.width; delete lbl.height; delete lbl.fontSize; // 구버전 필드 정리
         drawLabels();
