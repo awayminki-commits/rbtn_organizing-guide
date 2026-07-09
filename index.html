@@ -190,7 +190,7 @@
 
   .photo-label-wrap{position:absolute; z-index:6;}
   .photo-label-rotate-group{position:relative; display:inline-block; transform-origin:center center;}
-  .label-toolbar{position:absolute; top:-24px; left:0; display:flex; align-items:center; gap:2px; background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:2px; box-shadow:0 2px 6px rgba(0,0,0,.15); white-space:nowrap; z-index:10;}
+  .label-toolbar{position:absolute; display:flex; align-items:center; gap:2px; background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:2px; box-shadow:0 2px 6px rgba(0,0,0,.15); white-space:nowrap; z-index:10;}
   .label-drag{cursor:grab; padding:2px 5px; color:var(--ink-soft); font-size:12px; user-select:none;}
   .label-drag:active{cursor:grabbing;}
   .label-toolbar button{border:none; background:none; color:var(--ink); font-size:11px; padding:2px 6px; cursor:pointer; border-radius:4px; font-family:var(--sans);}
@@ -1444,6 +1444,7 @@ function attachPhotoHandlers(g){
       labelEl.textContent = lbl.text;
       rotateGroup.appendChild(labelEl);
       wrap.appendChild(rotateGroup);
+      labelLayer.appendChild(wrap); // 실제 위치/크기를 측정하려면 먼저 화면(DOM)에 붙어있어야 함
 
       if (editable){
         labelEl.contentEditable = 'true';
@@ -1452,8 +1453,19 @@ function attachPhotoHandlers(g){
           debouncedSaveGames();
         });
 
+        // 회전 후 실제 화면에 보이는 라벨의 테두리를 측정해서, 툴바는 왼쪽 위
+        // 모서리 바로 위, 손잡이는 오른쪽 아래 모서리에 맞춰 배치합니다.
+        const wrapRect = wrap.getBoundingClientRect();
+        const groupRect = rotateGroup.getBoundingClientRect();
+        const relLeft = groupRect.left - wrapRect.left;
+        const relTop = groupRect.top - wrapRect.top;
+        const relRight = groupRect.right - wrapRect.left;
+        const relBottom = groupRect.bottom - wrapRect.top;
+
         const toolbar = document.createElement('div');
         toolbar.className = 'label-toolbar';
+        toolbar.style.left = relLeft + 'px';
+        toolbar.style.top = (relTop - 28) + 'px';
         toolbar.innerHTML = `
           <span class="label-drag" title="이동">⠿</span>
           <button title="글자 작게" onclick="changeLabelFontSize(${li},-1)">A-</button>
@@ -1463,26 +1475,24 @@ function attachPhotoHandlers(g){
         `;
         toolbar.querySelector('.label-drag').addEventListener('pointerdown', e=>{
           draggingLabel = li;
-          const wrapRect = wrap.getBoundingClientRect();
-          dragLabelOffset = { dx: e.clientX - wrapRect.left, dy: e.clientY - wrapRect.top };
+          const wrapRect2 = wrap.getBoundingClientRect();
+          dragLabelOffset = { dx: e.clientX - wrapRect2.left, dy: e.clientY - wrapRect2.top };
           e.stopPropagation();
         });
         wrap.appendChild(toolbar);
 
         // 손잡이는 회전시키지 않고, 회전 후 실제 화면에 보이는 오른쪽 아래
-        // 모서리를 측정해서 그 자리에 고정합니다.
+        // 모서리에 고정합니다.
         const resizeHandle = document.createElement('div');
         resizeHandle.className = 'label-resize';
-        const wrapRectNow = wrap.getBoundingClientRect();
-        const groupRectNow = rotateGroup.getBoundingClientRect();
-        resizeHandle.style.left = (groupRectNow.right - wrapRectNow.left - 6) + 'px';
-        resizeHandle.style.top = (groupRectNow.bottom - wrapRectNow.top - 6) + 'px';
+        resizeHandle.style.left = (relRight - 6) + 'px';
+        resizeHandle.style.top = (relBottom - 6) + 'px';
         resizeHandle.addEventListener('pointerdown', e=>{
           resizingLabel = li;
-          const groupRect = rotateGroup.getBoundingClientRect();
+          const groupRect2 = rotateGroup.getBoundingClientRect();
           resizeLabelStart = {
             startX: e.clientX, startY: e.clientY,
-            startW: groupRect.width, startH: groupRect.height,
+            startW: groupRect2.width, startH: groupRect2.height,
             startFontSizePct: fsPct
           };
           e.stopPropagation();
@@ -1490,8 +1500,6 @@ function attachPhotoHandlers(g){
         });
         wrap.appendChild(resizeHandle);
       }
-
-      labelLayer.appendChild(wrap);
     });
   }
 
