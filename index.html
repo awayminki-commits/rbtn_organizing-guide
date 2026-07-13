@@ -2458,6 +2458,18 @@ function stopPresenceHeartbeat_(resetLock){
   if (banner) banner.remove();
 }
 
+// 탭을 다른 창으로 전환하거나 최소화해서 화면이 안 보이게 되면, 편집 잠금을
+// 계속 갱신하는 걸 멈춥니다. (탭을 직접 안 닫아도, 안 보고 있는 동안은
+// 잠금이 곧 풀려서 다른 편집자가 편집할 수 있게 됩니다 - 최대 90초 이내)
+document.addEventListener('visibilitychange', ()=>{
+  if (!currentGameId || role !== 'editor') return;
+  if (document.hidden){
+    if (presenceInterval_){ clearInterval(presenceInterval_); presenceInterval_ = null; }
+  } else if (!presenceInterval_){
+    startPresenceHeartbeat_(currentGameId);
+  }
+});
+
 async function sendHeartbeat_(gameId){
   if (!authToken || currentGameId !== gameId) return;
   try{
