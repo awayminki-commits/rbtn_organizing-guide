@@ -103,6 +103,7 @@
   .detail-title{font-size:24px; font-weight:800; letter-spacing:-0.02em;}
   .detail-id{font-family:var(--mono); font-size:12px; color:var(--ink-soft); margin-top:2px;}
   .guide-done-toggle{display:flex; align-items:center; gap:6px; margin-top:8px; font-size:12.5px; color:var(--ink-soft); cursor:pointer;}
+  .presence-banner{background:#FFF6DE; border:1px solid #F0DFA8; color:#7a5b12; font-size:12.5px; font-weight:600; padding:9px 14px; border-radius:8px; margin-bottom:14px;}
   .guide-done-toggle input{cursor:pointer;}
   .game-note-area{flex:1; display:flex; justify-content:flex-end; max-width:380px;}
   .game-note-add{font-size:12px; color:var(--ink-soft); background:none; border:1px dashed var(--line); border-radius:7px; padding:7px 12px; cursor:pointer; font-family:var(--sans); align-self:flex-start;}
@@ -234,6 +235,26 @@
   .access-edit-name{border:none; background:none; cursor:pointer; font-size:12px; opacity:.55; padding:2px 4px; flex-shrink:0;}
   .access-edit-name:hover{opacity:1;}
   .access-empty{font-size:12.5px; color:var(--ink-soft); padding:6px 0;}
+  .pg-head{margin-bottom:16px;}
+  .pg-head h2{font-size:19px; margin:0 0 6px;}
+  .pg-desc{font-size:12.5px; color:var(--ink-soft); max-width:640px; line-height:1.5; margin:0 0 12px;}
+  .pg-actions{display:flex; gap:8px;}
+  .pg-body{display:grid; grid-template-columns:1fr 1.3fr; gap:20px; align-items:start;}
+  @media (max-width:800px){ .pg-body{grid-template-columns:1fr;} }
+  .pg-panel{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px;}
+  .pg-panel h3{font-size:14px; margin:0 0 12px;}
+  .pg-game-list{max-height:480px; overflow-y:auto; display:flex; flex-direction:column; gap:2px;}
+  .pg-game-row{display:flex; align-items:center; gap:8px; padding:8px 6px; border-radius:6px; font-size:13px; cursor:pointer;}
+  .pg-game-row:hover{background:var(--bg);}
+  .pg-game-name{flex:1;}
+  .pg-game-id{font-family:var(--mono); font-size:11px; color:var(--ink-soft);}
+  .pg-table{width:100%; border-collapse:collapse; font-size:13px;}
+  .pg-table th{text-align:left; font-size:11.5px; color:var(--ink-soft); font-weight:600; padding:0 8px 8px; border-bottom:1px solid var(--line);}
+  .pg-table td{padding:10px 8px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  .pg-size{font-family:var(--mono); font-size:12px; color:var(--ink-soft);}
+  .pg-qty{font-weight:700;}
+  .pg-option{font-size:12px; color:var(--ink-soft);}
+  .pg-note{font-size:11.5px; color:var(--ink-soft); margin-top:14px; line-height:1.5;}
   .history-list{max-height:340px; overflow-y:auto; margin-top:6px;}
   .history-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); flex-wrap:wrap;}
   .history-row:last-child{border-bottom:none;}
@@ -330,6 +351,7 @@
     <button class="btn btn-ghost" id="accessBtn" style="display:none;" onclick="showAccessModal()">🔑 권한 관리</button>
     <button class="btn btn-ghost" id="dashboardBtn" style="display:none;" onclick="openDashboard()">📊 진행현황</button>
     <button class="btn btn-ghost" id="rebuildBtn" style="display:none;" onclick="triggerRebuildIndex()" title="목록이 이상하게 보일 때 사용하세요">🔧 목록 복구</button>
+    <button class="btn btn-ghost" onclick="openPurchaseGuide()">🛒 구매 가이드</button>
     <button class="btn btn-ghost" id="logoutBtn" onclick="logout()">로그아웃</button>
     <button class="btn btn-primary" id="newGameBtn" style="display:none;">+ 새 가이드</button>
   </div>
@@ -342,6 +364,36 @@
 const CASE_TYPES = ['A','B','C','D','E','F','G','H','I','J','K','L'];
 const CASE_SIZES = {A:'65x45x20',B:'82x62x47',C:'85x55x25',D:'88x88x23',E:'95x67x26',F:'105x75x25',
   G:'105x75x50',H:'105x105x35',I:'115x85x28',J:'145x85x35',K:'210x70x25',L:'325x240x40'};
+
+// 구매 가이드: TOP50 게임 중 플라스틱 케이스로 정리하는 게임 목록 (id → 이름, 목록이 아직
+// 안 불러와졌거나 해당 게임이 없을 때의 표시용 폴백으로도 사용)
+const TOP50_CASE_GAMES = [
+  {id:'103', name:'스플렌더'}, {id:'291', name:'라쿠카라차'}, {id:'428', name:'꼬치의 달인'},
+  {id:'27', name:'라스베가스'}, {id:'717', name:'금지어 게임'}, {id:'142', name:'챠오챠오'},
+  {id:'451', name:'요트다이스'}, {id:'228', name:'센추리 : 향신료의 길'}, {id:'431', name:'5초준다'},
+  {id:'548', name:'스트라이크'}, {id:'42', name:'루핑루이'}, {id:'457', name:'다잉메시지 : 소설가의 마지막 문장'},
+  {id:'71', name:'뱅'}, {id:'3', name:'개조심'}, {id:'4', name:'고스트'}, {id:'47', name:'마법의미로'},
+  {id:'187', name:'톡톡우드맨'}, {id:'216', name:'흔들흔들해적선'}, {id:'80', name:'블로커스'},
+  {id:'896', name:'갈팡질팡'}, {id:'108', name:'아발론'}, {id:'165', name:'코코너츠'}, {id:'580', name:'쿼리도'},
+  {id:'526', name:'코드네임 듀엣'}, {id:'182', name:'텀블링몽키'}, {id:'482', name:'지킬대하이드'},
+  {id:'533', name:'스플렌더 대결'}, {id:'37', name:'렉시오'}
+];
+
+// 구매 가이드: 케이스 종류별 구매 링크·옵션 (사이즈는 CASE_SIZES 재사용)
+const CASE_PRODUCTS = {
+  A: { url:'https://boardm.co.kr/product/detail.html?product_no=7171', option:'S' },
+  B: { url:'https://smartstore.naver.com/gladiakfarm/products/12888522812', option:'-' },
+  C: { url:'https://boardm.co.kr/product/%ED%81%B4%EB%A6%AC%EC%96%B4-%EC%8B%9C%EB%A6%AC%EC%A6%88-%EC%B9%B4%EB%93%9C-%EC%BB%B4%ED%8F%AC%EB%84%8C%ED%8A%B8-%EC%BC%80%EC%9D%B4%EC%8A%A4/7171/category/232/display/1/', option:'M' },
+  D: { url:'https://smartstore.naver.com/2sekaii/products/5817849010', option:'E' },
+  E: { url:'https://smartstore.naver.com/2sekaii/products/5824133560', option:'10번' },
+  F: { url:'https://boardm.co.kr/product/detail.html?product_no=7171', option:'L' },
+  G: { url:'https://boardm.co.kr/product/detail.html?product_no=7171', option:'XL' },
+  H: { url:'https://smartstore.naver.com/gladiakfarm/products/10377353021', option:'105X105x35mm' },
+  I: { url:'https://smartstore.naver.com/modeunstoa/products/9874464661', option:'J-6' },
+  J: { url:'https://smartstore.naver.com/oposys/products/7559274760', option:'-' },
+  K: { url:'https://www.coupang.com/vp/products/7814464766?vendorItemId=93475108031&sourceType=sdp_buybox_winner_offer', option:'Lx화이트x2개' },
+  L: { url:'https://smartstore.naver.com/soholiving/products/4772901420', option:'뉴 심플멀티케이스/대형(45mm)/투명' }
+};
 
 let role = 'viewer';
 let currentGameId = null;
@@ -885,6 +937,8 @@ function closeRebuildProgressModal_(){
 
 
 let showDashboard = false;
+let showPurchaseGuide = false;
+let purchaseGuideSelected_ = new Set();
 
 function render(){
   const app = document.getElementById('app');
@@ -893,8 +947,10 @@ function render(){
   document.getElementById('accessBtn').style.display = isEditor ? 'inline-block' : 'none';
   document.getElementById('dashboardBtn').style.display = isEditor ? 'inline-block' : 'none';
   document.getElementById('rebuildBtn').style.display = isEditor ? 'inline-block' : 'none';
+  if (showPurchaseGuide){ renderPurchaseGuide(app); return; }
   if (showDashboard){ renderDashboard(app); return; }
   currentGameId ? renderDetail(app) : renderList(app);
+  if (currentGameId && role==='editor') updatePresenceBanner_(lastPresenceOthers_); // 다시 그려도 배너 유지
 }
 
 function openDashboard(){ showDashboard=true; currentGameId=null; render(); }
@@ -902,6 +958,99 @@ function closeDashboard(){ showDashboard=false; render(); }
 
 let dashboardFilter = 'all';
 function setDashboardFilter(v){ dashboardFilter = v; render(); }
+
+/**
+ * ============================================================
+ * 구매 가이드 (뷰어 포함 누구나 볼 수 있음)
+ * ============================================================
+ * TOP50 게임 중 플라스틱 케이스로 정리하는 게임들을 선택하면, 그 게임들에
+ * 등록된 케이스 데이터를 기준으로 케이스 종류별 필요 수량과 구매 링크를
+ * 보여줍니다. 매장마다 이미 정리된 게임이 다르므로 개별 체크가 가능합니다.
+ */
+function openPurchaseGuide(){
+  showPurchaseGuide = true;
+  currentGameId = null;
+  showDashboard = false;
+  render();
+}
+function closePurchaseGuide(){
+  showPurchaseGuide = false;
+  render();
+}
+function togglePurchaseGameSelect(id, checked){
+  if (checked) purchaseGuideSelected_.add(id);
+  else purchaseGuideSelected_.delete(id);
+  render();
+}
+function selectAllTop50Games(){
+  TOP50_CASE_GAMES.forEach(g=>purchaseGuideSelected_.add(g.id));
+  render();
+}
+function deselectAllPurchaseGames(){
+  purchaseGuideSelected_.clear();
+  render();
+}
+
+function renderPurchaseGuide(app){
+  const gameRows = TOP50_CASE_GAMES.map(tg=>{
+    const g = games.find(x=>String(x.id)===String(tg.id));
+    const name = g ? g.name : tg.name;
+    const checked = purchaseGuideSelected_.has(tg.id);
+    return `
+      <label class="pg-game-row">
+        <input type="checkbox" ${checked?'checked':''} onchange="togglePurchaseGameSelect('${tg.id}', this.checked)">
+        <span class="pg-game-name">${name}</span>
+        <span class="pg-game-id">ID ${tg.id}</span>
+      </label>`;
+  }).join('');
+
+  // 선택된 게임들의 케이스 종류별 필요 수량 집계
+  const counts = {};
+  purchaseGuideSelected_.forEach(id=>{
+    const g = games.find(x=>String(x.id)===String(id));
+    if (g && g.cases) g.cases.forEach(c=>{ counts[c.caseType] = (counts[c.caseType]||0) + 1; });
+  });
+
+  const neededTypes = CASE_TYPES.filter(t=>counts[t]);
+  const caseRows = neededTypes.map(t=>{
+    const p = CASE_PRODUCTS[t] || {};
+    return `
+      <tr>
+        <td><span class="case-badge case-${t}"><span class="dot"></span>${t}</span></td>
+        <td class="pg-size">${CASE_SIZES[t]||'-'}mm</td>
+        <td class="pg-qty">${counts[t]}개</td>
+        <td class="pg-option">${p.option||'-'}</td>
+        <td>${p.url ? `<a href="${p.url}" target="_blank" rel="noopener" class="btn btn-primary" style="padding:6px 12px; font-size:12.5px;">구매하기 ↗</a>` : '-'}</td>
+      </tr>`;
+  }).join('');
+
+  app.innerHTML = `
+    <button class="back" onclick="closePurchaseGuide()">← 목록으로</button>
+    <div class="pg-head">
+      <h2>🛒 구매 가이드</h2>
+      <p class="pg-desc">TOP50 게임 중 플라스틱 케이스로 정리하는 ${TOP50_CASE_GAMES.length}종을 기준으로, 선택한 게임에 필요한 케이스 수량과 구매 링크를 안내합니다. 매장에 이미 정리된 게임은 체크를 해제해주세요.</p>
+      <div class="pg-actions">
+        <button class="btn btn-primary" onclick="selectAllTop50Games()">TOP50 게임 선택</button>
+        <button class="btn btn-ghost" onclick="deselectAllPurchaseGames()">전체 해제</button>
+      </div>
+    </div>
+    <div class="pg-body">
+      <div class="pg-panel">
+        <h3>게임 선택 (${purchaseGuideSelected_.size}/${TOP50_CASE_GAMES.length})</h3>
+        <div class="pg-game-list">${gameRows}</div>
+      </div>
+      <div class="pg-panel">
+        <h3>필요한 케이스</h3>
+        ${neededTypes.length ? `
+          <table class="pg-table">
+            <thead><tr><th>종류</th><th>사이즈</th><th>필요 수량</th><th>옵션</th><th>구매</th></tr></thead>
+            <tbody>${caseRows}</tbody>
+          </table>
+        ` : `<div class="access-empty">왼쪽에서 게임을 선택하면 필요한 케이스가 여기 표시됩니다.</div>`}
+        <p class="pg-note">※ 실시간 재고 확인은 자동으로 제공되지 않습니다 (판매처마다 방식이 달라 정확한 확인이 어렵습니다). 구매 링크를 눌러 직접 확인해주세요.</p>
+      </div>
+    </div>`;
+}
 
 function renderDashboard(app){
   const all = games.slice().sort((a,b)=> String(a.name).localeCompare(String(b.name), 'ko'));
@@ -2101,7 +2250,7 @@ function helpEditorContent_(){
       <li><b>사진 순서 변경</b> — 사진이 여러 장이면 "◀ 순서 / 순서 ▶" 버튼으로 순서를 바꿀 수 있습니다. 그 사진에 찍어둔 마커·라벨도 함께 이동합니다.</li>
       <li><b>작업 진행 현황</b> — 상단 "📊 진행현황" 버튼으로 전체 게임의 완료율(%)과 진행 개수를 한눈에 보고, 게임별 사진 등록 여부·가이드 완료 여부(직접 체크)·매장 작업 완료 수를 확인할 수 있습니다. "가이드 미완료만" 필터로 남은 작업을 바로 골라볼 수 있습니다. 가이드 완료 체크는 대시보드뿐 아니라 게임 상세 화면 제목 아래에서도 바로 할 수 있습니다.</li>
       <li><b>목록 복구</b> — 목록에 게임이 몇 개만 보이거나 이상하게 나올 때, 상단 "🔧 목록 복구" 버튼으로 Apps Script에 안 들어가고도 바로 복구할 수 있습니다. 진행률(%)이 실시간으로 표시되며, 원본 데이터는 건드리지 않고 목록용 요약만 다시 만드므로 안전합니다.</li>
-      <li><b>동시 편집</b> — 여러 명이 각자 다른 게임을 동시에 편집해도 서로의 작업을 덮어쓰지 않습니다. 다른 편집자가 추가한 게임을 보려면 상단 "↻ 새로고침"을 눌러주세요.</li>
+      <li><b>동시 편집</b> — 여러 명이 각자 다른 게임을 동시에 편집해도 서로의 작업을 덮어쓰지 않습니다. 다른 편집자가 추가한 게임을 보려면 상단 "↻ 새로고침"을 눌러주세요. <b>같은 게임을 다른 편집자도 지금 보고 있으면 노란 배너로 알려줍니다</b> — 저장이 겹치지 않도록 서로 확인 후 작업해주세요. 그래도 겹치면, 최신 내용을 자동으로 불러오고 경고해드립니다.</li>
     </ul>
     <p class="help-note">사진 탭과 표 탭 어디서 수정하든 동일한 데이터가 저장되어, 뷰어에게 바로 반영됩니다.</p>
   `;
@@ -2210,10 +2359,25 @@ let gameNoteExpanded = false;
 
 async function openGame(id){
   flushPendingSave_(currentGameId); // 다른 게임으로 넘어가기 전, 대기 중이던 저장을 먼저 확정
+  stopPresenceHeartbeat_();
   currentGameId=id; currentMode='1'; currentPhotoIdx=0; gameNoteExpanded=false; showDashboard=false;
   document.getElementById('app').innerHTML = `<div class="empty">불러오는 중...</div>`;
   await fetchFullGame_(id);
   render();
+
+  if (role === 'editor'){
+    const gotLock = await ensureEditLockForGame_(id);
+    if (!gotLock){
+      // 다른 편집자가 편집 중이고, 넘겨받지 않기로 함 → 뷰어 모드로 전환
+      role = 'viewer';
+      document.getElementById('roleViewerBtn').classList.add('active');
+      document.getElementById('roleEditorBtn').classList.remove('active');
+      render();
+    } else {
+      holdsEditLock_ = true;
+    }
+    startPresenceHeartbeat_(id);
+  }
 }
 
 /**
@@ -2246,7 +2410,110 @@ async function fetchFullGame_(id){
     showToast('서버 오류가 발생했습니다.', 'error');
   }
 }
-function closeGame(){ flushPendingSave_(currentGameId); currentGameId=null; showDashboard=false; render(); }
+function closeGame(){ flushPendingSave_(currentGameId); stopPresenceHeartbeat_(); currentGameId=null; showDashboard=false; render(); }
+
+/**
+ * ============================================================
+ * 편집자 접속 알림 (같은 게임을 지금 누가 보고 있는지)
+ * ============================================================
+ * 충돌이 실제로 벌어진 뒤에 알려주는 것보다, 애초에 서로 겹치지 않도록
+ * 미리 알려주는 게 훨씬 낫기 때문에 만든 기능입니다. 편집자에게만 적용됩니다.
+ */
+let presenceInterval_ = null;
+let lastPresenceOthers_ = [];
+let holdsEditLock_ = false; // 지금 이 게임의 편집 잠금을 내가 갖고 있는지
+const PRESENCE_INTERVAL_MS = 45000; // 45초마다 신호를 보냄
+
+function startPresenceHeartbeat_(gameId){
+  stopPresenceHeartbeat_(false);
+  sendHeartbeat_(gameId);
+  presenceInterval_ = setInterval(()=> sendHeartbeat_(gameId), PRESENCE_INTERVAL_MS);
+}
+
+function stopPresenceHeartbeat_(resetLock){
+  if (presenceInterval_) clearInterval(presenceInterval_);
+  presenceInterval_ = null;
+  lastPresenceOthers_ = [];
+  if (resetLock !== false) holdsEditLock_ = false;
+  const banner = document.getElementById('presenceBanner');
+  if (banner) banner.remove();
+}
+
+async function sendHeartbeat_(gameId){
+  if (!authToken || currentGameId !== gameId) return;
+  try{
+    const res = await fetch(WEB_APP_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'heartbeat', idToken:authToken, gameId, holdsEditLock: holdsEditLock_ })
+    });
+    const result = await res.json();
+    if (result.success && currentGameId === gameId){
+      lastPresenceOthers_ = result.others || [];
+      updatePresenceBanner_(lastPresenceOthers_);
+      if (result.kicked){
+        // 다른 편집자가 편집을 시작해서 내가 뷰어로 전환됨
+        holdsEditLock_ = false;
+        role = 'viewer';
+        const vb = document.getElementById('roleViewerBtn'), eb = document.getElementById('roleEditorBtn');
+        if (vb) vb.classList.add('active');
+        if (eb) eb.classList.remove('active');
+        render();
+        showToast('다른 편집자가 이 게임의 편집을 시작해서 뷰어로 전환되었습니다.', 'error');
+      }
+    }
+  }catch(e){ /* 접속 알림은 부가 기능이라 실패해도 무시합니다 */ }
+}
+
+/**
+ * 편집을 시작하기 전에 호출합니다. 다른 편집자가 이미 편집 중이면 물어보고,
+ * 넘겨받기로 하면 그 사람을 뷰어로 전환시키고 내가 편집 잠금을 가져옵니다.
+ */
+async function ensureEditLockForGame_(gameId){
+  try{
+    const res = await fetch(WEB_APP_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'acquireEditLock', idToken:authToken, gameId, force:false })
+    });
+    const result = await res.json();
+    if (!result.success) return true; // 확인 자체가 실패하면 막지 않고 그냥 진행
+
+    if (result.granted) return true;
+
+    const who = result.holderName || result.holderEmail || '다른 편집자';
+    const wantsToTake = confirm(`${who}님이 현재 이 게임을 편집 중입니다.\n지금 편집하시겠습니까? (편집을 시작하면 ${who}님은 뷰어로 전환됩니다)`);
+    if (!wantsToTake) return false;
+
+    const res2 = await fetch(WEB_APP_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({ action:'acquireEditLock', idToken:authToken, gameId, force:true })
+    });
+    const result2 = await res2.json();
+    return !!(result2.success && result2.granted);
+  }catch(e){
+    console.error(e);
+    return true; // 확인 실패 시 막지 않음
+  }
+}
+
+function updatePresenceBanner_(otherEmails){
+  let el = document.getElementById('presenceBanner');
+  if (!otherEmails || !otherEmails.length){
+    if (el) el.remove();
+    return;
+  }
+  if (!el){
+    el = document.createElement('div');
+    el.id = 'presenceBanner';
+    el.className = 'presence-banner';
+    const head = document.querySelector('.detail-head');
+    if (head && head.parentNode) head.parentNode.insertBefore(el, head.nextSibling);
+    else return;
+  }
+  el.textContent = `⚠ 이 게임을 지금 같이 보고 있는 편집자가 있습니다 (${otherEmails.length}명). 저장이 겹치지 않도록 서로 확인 후 작업해주세요.`;
+}
 
 function renderGameNote_(g){
   const editable = role==='editor';
@@ -2516,14 +2783,30 @@ async function enterEditorMode(){
   }
 }
 
-function setRole(r){
+async function setRole(r){
   role = r;
   document.getElementById('roleViewerBtn').classList.toggle('active', r==='viewer');
   document.getElementById('roleEditorBtn').classList.toggle('active', r==='editor');
+  if (currentGameId){
+    if (r === 'editor'){
+      startPresenceHeartbeat_(currentGameId);
+      const gotLock = await ensureEditLockForGame_(currentGameId);
+      if (!gotLock){
+        role = 'viewer';
+        document.getElementById('roleViewerBtn').classList.add('active');
+        document.getElementById('roleEditorBtn').classList.remove('active');
+      } else {
+        holdsEditLock_ = true;
+      }
+    } else {
+      stopPresenceHeartbeat_();
+    }
+  }
   render();
 }
 
 function logout(){
+  stopPresenceHeartbeat_();
   clearCachedAuthToken();
   clearCachedEditorApproval();
   role = 'viewer';
