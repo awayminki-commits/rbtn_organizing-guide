@@ -601,7 +601,190 @@ function openMigrationTool(){
       <button class="btn btn-primary2" style="width:auto;" onclick="startMigration_()">가져오기 시작</button>
     </div>
     <div id="migrationLog" style="margin-top:16px; font-size:12.5px; font-family:var(--mono); white-space:pre-wrap; background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:14px; max-height:400px; overflow-y:auto;"></div>
+
+    <hr style="margin:32px 0; border:none; border-top:1px solid var(--line);">
+
+    <h2 style="margin:0 0 10px;">🔁 게임별 JSON 파일로 개별 교체</h2>
+    <p style="font-size:12.5px; color:var(--ink-soft); max-width:520px;">
+      <code>game_535.json</code>처럼 <b>게임 ID가 포함된 파일명</b>(또는 파일 내용에 <code>id</code> 필드)을 가진
+      JSON 파일을 한 개 또는 여러 개 선택하면, 해당 게임 ID의 데이터만 각각 교체합니다.
+      나머지 게임·계정·매장 정보는 전혀 건드리지 않습니다.
+    </p>
+    <input type="file" id="gameReplaceFileInput" accept="application/json" multiple style="margin:14px 0;" onchange="previewGameReplaceFiles_()">
+    <div id="gameReplacePreview"></div>
+    <div id="gameReplaceLog" style="margin-top:16px; font-size:12.5px; font-family:var(--mono); white-space:pre-wrap; background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:14px; max-height:400px; overflow-y:auto;"></div>
   `;
+}
+
+/**
+ * ============================================================
+ * 게임별 JSON 파일로 개별 교체 (game_535.json 처럼 ID가 담긴 파일들을
+ * 각각 읽어서, 그 게임 하나씩만 Firestore에 덮어씁니다)
+ * ============================================================
+ */
+let gameReplaceParsed_ = []; // [{ fileName, guessedId, gameData, parseError }]
+
+/** 파일명에서 게임 ID로 보이는 숫자를 하나 뽑아냅니다. (예: game_535.json -> "535") */
+function guessGameIdFromFileName_(fileName){
+  const base = fileName.replace(/\.json$/i, '');
+  const m = base.match(/(\d+)/);
+  return m ? m[1] : '';
+}
+
+/** 파일 하나의 JSON에서 실제 "게임 데이터 객체"를 뽑아냅니다. (여러 포맷을 허용) */
+function extractGameObjectFromJson_(data){
+  if (!data || typeof data !== 'object') return null;
+  if (Array.isArray(data.games) && data.games.length) return data.games[0]; // 마이그레이션 묶음 포맷도 허용
+  if (data.name !== undefined || data.cases !== undefined || data.id !== undefined) return data; // 게임 객체 그 자체
+  return null;
+}
+
+async function previewGameReplaceFiles_(){
+  const input = document.getElementById('gameReplaceFileInput');
+  const files = Array.from(input.files || []);
+  const previewEl = document.getElementById('gameReplacePreview');
+  gameReplaceParsed_ = [];
+  if (!files.length){ previewEl.innerHTML = ''; return; }
+
+  for (const file of files){
+    let entry = { fileName: file.name, guessedId: '', gameData: null, parseError: '' };
+    try{
+      const text = await file.text();
+      const data = JSON.parse(text);
+      const gameObj = extractGameObjectFromJson_(data);
+      if (!gameObj){
+        entry.parseError = '이 파일에서 게임 데이터를 찾지 못했습니다.';
+      } else {
+        entry.gameData = gameObj;
+        entry.guessedId = gameObj.id !== undefined && gameObj.id !== null && String(gameObj.id).trim() !== ''
+          ? String(gameObj.id).trim()
+          : guessGameIdFromFileName_(file.name);
+      }
+    }catch(e){
+      entry.parseError = 'JSON 파싱 실패: ' + e.message;
+    }
+    gameReplaceParsed_.push(entry);
+  }
+  renderGameReplacePreview_();
+}
+
+function renderGameReplacePreview_(){
+  const previewEl = document.getElementById('gameReplacePreview');
+  if (!gameReplaceParsed_.length){ previewEl.innerHTML = ''; return; }
+
+  const rows = gameReplaceParsed_.map((entry, idx) => {
+    if (entry.parseError){
+      return `
+        <tr style="border-bottom:1px solid var(--line);">
+          <td style="padding:6px 8px;">${entry.fileName}</td>
+          <td colspan="3" style="padding:6px 8px; color:#c0392b;">❌ ${entry.parseError}</td>
+        </tr>`;
+    }
+    const currentGame = games.find(g => String(g.id) === String(entry.guessedId));
+    const newName = entry.gameData.name || '(이름 없음)';
+    const statusHtml = currentGame
+      ? `기존: <b>${currentGame.name}</b> → 교체 후: <b>${newName}</b>`
+      : `<span style="color:#b8860b;">⚠ 이 ID의 기존 게임이 없습니다 — 새로 생성됩니다</span>`;
+    return `
+      <tr style="border-bottom:1px solid var(--line);">
+        <td style="padding:6px 8px; max-width:220px; word-break:break-all;">${entry.fileName}</td>
+        <td style="padding:6px 8px;"><input type="text" data-idx="${idx}" class="grIdInput" value="${entry.guessedId}"
+              style="width:90px; padding:5px 8px; border:1px solid var(--line); border-radius:5px; font-size:12.5px;"
+              onchange="updateGameReplaceId_(${idx}, this.value)"></td>
+        <td style="padding:6px 8px; font-size:12px;">${statusHtml}</td>
+        <td style="padding:6px 8px;"><label style="font-size:12px; display:flex; align-items:center; gap:4px;">
+              <input type="checkbox" class="grIncludeCheck" data-idx="${idx}" checked> 포함</label></td>
+      </tr>`;
+  }).join('');
+
+  previewEl.innerHTML = `
+    <table style="border-collapse:collapse; width:100%; max-width:760px; font-size:12.5px; margin:10px 0;">
+      <thead>
+        <tr style="text-align:left; border-bottom:1px solid var(--line);">
+          <th style="padding:6px 8px;">파일명</th>
+          <th style="padding:6px 8px;">게임 ID</th>
+          <th style="padding:6px 8px;">미리보기</th>
+          <th style="padding:6px 8px;"></th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <button class="btn btn-primary2" style="width:auto;" onclick="startGameReplace_()">선택한 게임 교체 실행</button>
+  `;
+}
+
+function updateGameReplaceId_(idx, value){
+  if (gameReplaceParsed_[idx]) gameReplaceParsed_[idx].guessedId = value.trim();
+}
+
+function grLog_(msg){
+  const el = document.getElementById('gameReplaceLog');
+  if (el) el.textContent += msg + '\n';
+  if (el) el.scrollTop = el.scrollHeight;
+}
+
+async function startGameReplace_(){
+  const includeChecks = Array.from(document.querySelectorAll('.grIncludeCheck'));
+  const targets = [];
+  for (const chk of includeChecks){
+    const idx = Number(chk.dataset.idx);
+    const entry = gameReplaceParsed_[idx];
+    if (!entry || entry.parseError) continue;
+    if (!chk.checked) continue;
+    const id = (entry.guessedId || '').trim();
+    if (!id){
+      grLog_(`❌ "${entry.fileName}" — 게임 ID를 확인할 수 없어 건너뜁니다.`);
+      continue;
+    }
+    targets.push({ id, gameData: entry.gameData, fileName: entry.fileName });
+  }
+
+  if (!targets.length){ alert('교체할 게임이 없습니다.'); return; }
+
+  const summary = targets.map(t => `#${t.id} (${t.fileName})`).join(', ');
+  if (!confirm(`다음 게임 ${targets.length}개를 교체합니다: ${summary}\n\n현재 내용을 덮어씁니다. 계속할까요?`)) return;
+
+  document.getElementById('gameReplaceLog').textContent = '';
+  grLog_(`게임 ${targets.length}개 교체 시작...\n`);
+
+  for (let i=0; i<targets.length; i++){
+    const { id, gameData: g, fileName } = targets[i];
+    try{
+      const photos = [];
+      for (const p of (g.photos||[])){
+        const newPhoto = { markers: p.markers||[], labels: p.labels||[] };
+        if (p.imageUrl && p.imageUrl.startsWith('data:')){
+          const blob = dataURLtoBlob_(p.imageUrl);
+          const storagePath = `games/${id}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+          await uploadBytes(ref(storage, storagePath), blob);
+          newPhoto.storagePath = storagePath;
+        } else if (p.storagePath){
+          newPhoto.storagePath = p.storagePath; // 이미 Storage에 있는 사진은 그대로 참조만 유지
+        } else {
+          grLog_(`  ⚠ "${fileName}" 사진 하나에 이미지 데이터가 없어 건너뜁니다.`);
+          continue;
+        }
+        photos.push(newPhoto);
+      }
+      const gameDoc = {
+        name: g.name || '',
+        cases: g.cases || [],
+        photos: photos,
+        guideDone: !!g.guideDone,
+        completedBy: g.completedBy || [],
+        note: g.note || '',
+        updatedAt: Date.now()
+      };
+      await setDoc(doc(db, 'games', String(id)), gameDoc);
+      grLog_(`  (${i+1}/${targets.length}) #${id} ${g.name || ''} — 완료`);
+    }catch(e){
+      grLog_(`  (${i+1}/${targets.length}) #${id} — ❌ 실패: ${e.message}`);
+    }
+  }
+
+  grLog_('\n목록 새로고침 중...');
+  await loadGames();
+  grLog_('✅ 교체 완료!');
 }
 
 function migLog_(msg){
