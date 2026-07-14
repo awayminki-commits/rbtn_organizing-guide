@@ -1,0 +1,2062 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>레드버튼 오거나이징 가이드</title>
+<style>
+  :root{
+    --bg: #F6F6F3;
+    --surface: #FFFFFF;
+    --ink: #1B1C1A;
+    --ink-soft: #63645F;
+    --line: #E3E3DE;
+    --accent: #E4141B;
+    --accent-soft: #FCE9E8;
+    --danger: #B3492B;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Pretendard', 'Malgun Gothic', sans-serif;
+    --mono: 'SFMono-Regular', Menlo, Consolas, 'Courier New', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--sans); line-height:1.5;}
+  .login-gate{position:fixed; inset:0; background:var(--bg); display:flex; align-items:center; justify-content:center; z-index:200; padding:20px;}
+  .login-gate-box{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:36px 32px; max-width:360px; width:100%; text-align:center; box-shadow:0 8px 30px rgba(0,0,0,.08);}
+  .brand{font-weight:900; font-size:22px; letter-spacing:-0.03em; text-transform:uppercase; color:var(--accent); margin-bottom:16px;}
+  .brand .r-mark{font-size:10px; vertical-align:super; margin-left:1px;}
+  p{font-size:13px; color:var(--ink-soft); line-height:1.6; margin:0;}
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:8px; border:none; border-radius:8px; padding:11px 18px; font-size:13.5px; font-weight:700; cursor:pointer; font-family:var(--sans); width:100%; margin-top:16px;}
+  .btn-google{background:#fff; color:#3c4043; border:1px solid #dadce0;}
+  .btn-google:hover{background:#f8f8f8;}
+  .btn-ghost{background:none; color:var(--ink-soft); text-decoration:underline;}
+  .field{margin-bottom:12px; text-align:left;}
+  .field label{display:block; font-size:12px; font-weight:700; margin-bottom:4px; color:var(--ink-soft);}
+  .field input, .field select{width:100%; padding:9px 10px; border:1px solid var(--line); border-radius:7px; font-size:13.5px; font-family:var(--sans);}
+  .error-box{display:none; color:var(--danger); font-size:12.5px; margin-top:10px; text-align:center;}
+  code{background:var(--bg); padding:1px 5px; border-radius:4px; font-size:12px;}
+
+  /* ---- 앱 화면 (로그인 이후) ---- */
+  .topbar{position:sticky; top:0; z-index:20; background:var(--surface); border-bottom:1px solid var(--line); padding:14px 24px; display:flex; align-items:center; gap:14px;}
+  .topbar .btn{width:auto; margin:0; padding:8px 14px;}
+  .topbar .btn-ghost2{background:none; border:1px solid var(--line); color:var(--ink);}
+  .topbar .btn-primary2{background:var(--accent); color:#fff; border:none;}
+  .app{max-width:960px; margin:0 auto; padding:24px;}
+  .game-list{display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:12px;}
+  .game-card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; cursor:pointer;}
+  .game-card:hover{border-color:var(--accent);}
+  .game-card .name{font-weight:700; font-size:14.5px;}
+  .game-card .meta{font-size:11.5px; color:var(--ink-soft); margin-top:4px;}
+  .back{background:none; border:none; color:var(--ink-soft); font-size:12.5px; cursor:pointer; padding:0; margin-bottom:14px;}
+  .case-table{width:100%; border-collapse:collapse; font-size:13px;}
+  .case-table th{text-align:left; font-size:11px; color:var(--ink-soft); padding:0 8px 8px; border-bottom:1px solid var(--line);}
+  .case-table td{padding:8px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  .case-table input, .case-table select{width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:6px; font-size:13px; font-family:var(--sans);}
+  .case-A{--c:#C1440E;} .case-B{--c:#B08900;} .case-C{--c:#4C7A1F;} .case-D{--c:#1F7A5C;}
+  .case-E{--c:#1F7A8C;} .case-F{--c:#2A5CA6;} .case-G{--c:#5B3FA6;} .case-H{--c:#9C2E8C;}
+  .case-I{--c:#B32E5C;} .case-J{--c:#8C3A2E;} .case-K{--c:#5C5C1F;} .case-L{--c:#3A5C3A;}
+  .case-badge{display:inline-flex; align-items:center; font-family:var(--mono); font-weight:800; font-size:14px; padding:4px 9px; border-radius:6px; border:2px solid var(--c); color:var(--c);}
+
+  .tabs{display:flex; gap:6px; margin-bottom:14px;}
+  .tabs button{background:none; border:1px solid var(--line); border-radius:7px; padding:7px 14px; font-size:12.5px; font-weight:700; color:var(--ink-soft); cursor:pointer;}
+  .tabs button.active{background:var(--ink); color:#fff; border-color:var(--ink);}
+  .photo-stage{position:relative; width:100%; aspect-ratio:4/3; background:#111 center/contain no-repeat; border-radius:10px; overflow:hidden;}
+  .photo-nav{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
+  .marker{position:absolute; width:24px; height:24px; border-radius:50%; background:var(--c,var(--accent)); border:2px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,.5); transform:translate(-50%,-50%); cursor:grab; display:flex; align-items:center; justify-content:center; color:#fff; font-family:var(--mono); font-weight:800; font-size:12px; z-index:5;}
+  .line-layer{position:absolute; inset:0; pointer-events:none; z-index:1; overflow:visible;}
+  .conn-line{position:absolute; height:0; border-top:1.5px dashed rgba(255,255,255,.9); transform-origin:0 0; pointer-events:none;}
+  .marker:active{cursor:grabbing;}
+  .anno-box{position:absolute; background:rgba(255,255,255,.97); border:1px solid var(--line); border-radius:8px; padding:8px; min-width:150px; max-width:220px; box-shadow:0 3px 12px rgba(0,0,0,.25); font-size:11.5px; cursor:grab;}
+  .anno-box:active{cursor:grabbing;}
+  .anno-head{display:flex; align-items:center; gap:6px; margin-bottom:6px;}
+  .anno-head select{font-family:var(--mono); font-weight:800; font-size:12px; padding:2px 4px; border:1px solid var(--line); border-radius:5px;}
+  .anno-del{margin-left:auto; background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:13px; padding:0 2px;}
+  .anno-item{display:flex; gap:4px; margin-bottom:3px;}
+  .anno-item input[type=text]{flex:1; min-width:0; padding:3px 5px; font-size:11px; border:1px solid var(--line); border-radius:4px;}
+  .anno-item input[type=number]{width:42px; padding:3px 4px; font-size:11px; border:1px solid var(--line); border-radius:4px;}
+  .anno-item button{background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:11px; padding:0 2px;}
+  .anno-additem{font-size:10.5px; color:var(--accent); background:none; border:none; cursor:pointer; padding:2px 0; font-weight:700;}
+  .anno-label-btn{background:#000; color:#fff; border:none; border-radius:4px; font-size:10px; padding:3px 8px; cursor:pointer; font-weight:700; margin-top:4px;}
+
+  /* ---- 사진 자르기/회전 모달 ---- */
+  .modal-backdrop{position:fixed; inset:0; background:rgba(0,0,0,.55); z-index:300; display:flex; align-items:center; justify-content:center; padding:20px;}
+  .modal{background:var(--surface); border-radius:14px; padding:20px; max-width:520px; width:100%; max-height:90vh; overflow-y:auto;}
+  .modal h3{margin:0 0 12px; font-size:15px;}
+  .crop-toolbar{display:flex; gap:8px; margin-bottom:10px;}
+  .crop-toolbar button{border:1px solid var(--line); background:var(--surface); border-radius:7px; padding:6px 12px; font-size:12.5px; cursor:pointer;}
+  .crop-canvas-wrap{position:relative; width:100%; background:#111; border-radius:8px; overflow:hidden;}
+  .crop-canvas-wrap canvas{position:absolute; inset:0; width:100%; height:100%;}
+  .crop-box{position:absolute; border:1.5px dashed #fff; box-shadow:0 0 0 2000px rgba(0,0,0,.45);}
+  .crop-handle{position:absolute; right:-6px; bottom:-6px; width:14px; height:14px; background:#fff; border:2px solid var(--accent); border-radius:3px; cursor:nwse-resize;}
+  .modal-actions{display:flex; justify-content:flex-end; gap:8px; margin-top:16px;}
+  .modal-actions button{border:none; border-radius:7px; padding:9px 16px; font-size:13px; font-weight:700; cursor:pointer;}
+  .modal-actions .btn-cancel{background:none; color:var(--ink-soft); border:1px solid var(--line);}
+  .modal-actions .btn-apply{background:var(--accent); color:#fff;}
+  .presence-banner{background:#FFF6DE; border:1px solid #F0DFA8; color:#7a5b12; font-size:12.5px; font-weight:600; padding:9px 14px; border-radius:8px; margin-bottom:14px;}
+  #roleToggle button.active{background:var(--ink); color:#fff;}
+  .pg-body{display:grid; grid-template-columns:1fr 1.3fr; gap:20px; align-items:start;}
+  @media (max-width:800px){ .pg-body{grid-template-columns:1fr;} }
+  .pg-panel{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px;}
+  .pg-panel h3{font-size:14px; margin:0 0 12px;}
+  .pg-game-list{max-height:480px; overflow-y:auto; display:flex; flex-direction:column; gap:2px;}
+  .pg-game-row{display:flex; align-items:center; gap:8px; padding:8px 6px; border-radius:6px; font-size:13px; cursor:pointer;}
+  .pg-game-row:hover{background:var(--bg);}
+  .pg-game-name{flex:1;}
+  .pg-game-id{font-family:var(--mono); font-size:11px; color:var(--ink-soft);}
+  .pg-top50-badge{font-size:10px; font-weight:800; color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, white); border-radius:4px; padding:2px 6px; flex-shrink:0;}
+  .pg-search{width:100%; box-sizing:border-box; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-size:13px; margin-bottom:10px;}
+  .pg-table{width:100%; border-collapse:collapse; font-size:13px;}
+  .pg-table th{text-align:left; font-size:11.5px; color:var(--ink-soft); font-weight:600; padding:0 8px 8px; border-bottom:1px solid var(--line);}
+  .pg-table td{padding:10px 8px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  .label-wrap{position:absolute;}
+  .label-rotate-group{position:relative; display:inline-block; transform-origin:center center;}
+  .photo-label{background:#000; color:#fff; font-weight:700; padding:6px 10px; border-radius:3px; text-align:center; white-space:pre-wrap; outline:none; min-width:1.5em; cursor:text; box-sizing:border-box; display:flex; align-items:center; justify-content:center;}
+  .label-resize{position:absolute; width:12px; height:12px; background:#fff; border:2px solid var(--accent); border-radius:2px; cursor:nwse-resize;}
+  .label-toolbar{position:absolute; display:flex; gap:2px; background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:2px; box-shadow:0 2px 6px rgba(0,0,0,.15); white-space:nowrap;}
+  .label-toolbar button{border:none; background:none; font-size:11px; padding:3px 6px; cursor:pointer; border-radius:4px;}
+  .label-toolbar button:hover{background:var(--bg);}
+  .label-drag{cursor:grab; padding:3px 5px; font-size:11px; color:var(--ink-soft);}
+  .align-guide{position:absolute; background:#ff4444; pointer-events:none; z-index:9;}
+  .upload-row{display:flex; align-items:center; gap:10px; margin-bottom:12px;}
+</style>
+</head>
+<body>
+
+<div class="login-gate" id="loginGate">
+  <div class="login-gate-box" id="gateContent">
+    <div class="brand">RED BUTTON<span class="r-mark">®</span></div>
+    <p>불러오는 중...</p>
+  </div>
+</div>
+
+<div id="appRoot" style="display:none;">
+  <div class="topbar">
+    <div class="brand" style="margin:0;">RED BUTTON<span class="r-mark">®</span></div>
+    <div style="flex:1;"></div>
+    <span id="roleLabel" style="font-size:12px; color:var(--ink-soft);"></span>
+    <div id="roleToggle" style="display:none; gap:4px; border:1px solid var(--line); border-radius:7px; padding:2px;">
+      <button id="roleViewerBtn" onclick="setRole('viewer')" style="border:none; background:none; padding:5px 10px; font-size:12px; border-radius:5px; cursor:pointer;">뷰어</button>
+      <button id="roleEditorBtn" onclick="setRole('editor')" style="border:none; background:none; padding:5px 10px; font-size:12px; border-radius:5px; cursor:pointer;">편집자</button>
+    </div>
+    <button class="btn btn-ghost2" onclick="renderList()">← 목록</button>
+    <button class="btn btn-primary2" id="newGameBtn" style="display:none;" onclick="createNewGame()">+ 새 게임</button>
+    <button class="btn btn-ghost2" id="dashboardBtn" style="display:none;" onclick="openDashboard()">📊 진행현황</button>
+    <button class="btn btn-ghost2" id="accessBtn" style="display:none;" onclick="openAccessManagement()">🔑 권한 관리</button>
+    <button class="btn btn-ghost2" id="migrateBtn" style="display:none;" onclick="openMigrationTool()">📥 데이터 가져오기</button>
+    <button class="btn btn-ghost2" onclick="openPurchaseGuide()">🛒 구매 가이드</button>
+    <button class="btn btn-ghost2" onclick="doLogout()">로그아웃</button>
+  </div>
+  <div class="app" id="app"></div>
+</div>
+
+<!-- Firebase SDK (CDN, 모듈 방식) -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, getDocs, addDoc,
+  runTransaction, onSnapshot, query, orderBy, limit
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getStorage, ref, uploadBytes, getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
+
+// ============================================================
+// Firebase 설정 (프로젝트 설정 > 내 앱 에서 복사한 값)
+// ============================================================
+const firebaseConfig = {
+  apiKey: "AIzaSyAQmukoq1izvjFjxK-TVWG-1GMCPrvjLdk",
+  authDomain: "redbutton-organizing-guide.firebaseapp.com",
+  projectId: "redbutton-organizing-guide",
+  storageBucket: "redbutton-organizing-guide.firebasestorage.app",
+  messagingSenderId: "503497098724",
+  appId: "1:503497098724:web:e97a10fdd5d2941797b3f1"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const storage = getStorage(app);
+const provider = new GoogleAuthProvider();
+
+const POSITIONS = ['점주','점장','매니저','트레이너','버트너','본사'];
+const CASE_TYPES = ['A','B','C','D','E','F','G','H','I','J','K','L'];
+const CASE_SIZES = {A:'65x45x20',B:'82x62x47',C:'85x55x25',D:'88x88x23',E:'95x67x26',F:'105x75x25',
+  G:'105x75x50',H:'105x105x35',I:'115x85x28',J:'145x85x35',K:'210x70x25',L:'325x240x40'};
+
+// 구매 가이드: TOP50 게임 중 플라스틱 케이스로 정리하는 게임 목록 (id → 이름, 폴백 표시용)
+const TOP50_CASE_GAMES = [
+  {id:'103', name:'스플렌더'}, {id:'291', name:'라쿠카라차'}, {id:'428', name:'꼬치의 달인'},
+  {id:'27', name:'라스베가스'}, {id:'717', name:'금지어 게임'}, {id:'142', name:'챠오챠오'},
+  {id:'451', name:'요트다이스'}, {id:'228', name:'센추리 : 향신료의 길'}, {id:'431', name:'5초준다'},
+  {id:'548', name:'스트라이크'}, {id:'42', name:'루핑루이'}, {id:'457', name:'다잉메시지 : 소설가의 마지막 문장'},
+  {id:'71', name:'뱅'}, {id:'3', name:'개조심'}, {id:'4', name:'고스트'}, {id:'47', name:'마법의미로'},
+  {id:'187', name:'톡톡우드맨'}, {id:'216', name:'흔들흔들해적선'}, {id:'80', name:'블로커스'},
+  {id:'896', name:'갈팡질팡'}, {id:'108', name:'아발론'}, {id:'165', name:'코코너츠'}, {id:'580', name:'쿼리도'},
+  {id:'526', name:'코드네임 듀엣'}, {id:'182', name:'텀블링몽키'}, {id:'482', name:'지킬대하이드'},
+  {id:'533', name:'스플렌더 대결'}, {id:'37', name:'렉시오'}
+];
+
+// 구매 가이드: 케이스 종류별 구매 링크·옵션
+const CASE_PRODUCTS = {
+  A: { url:'https://boardm.co.kr/product/detail.html?product_no=7171', option:'S' },
+  B: { url:'https://smartstore.naver.com/gladiakfarm/products/12888522812', option:'-' },
+  C: { url:'https://boardm.co.kr/product/%ED%81%B4%EB%A6%AC%EC%96%B4-%EC%8B%9C%EB%A6%AC%EC%A6%88-%EC%B9%B4%EB%93%9C-%EC%BB%B4%ED%8F%AC%EB%84%8C%ED%8A%B8-%EC%BC%80%EC%9D%B4%EC%8A%A4/7171/category/232/display/1/', option:'M' },
+  D: { url:'https://smartstore.naver.com/2sekaii/products/5817849010', option:'E' },
+  E: { url:'https://smartstore.naver.com/2sekaii/products/5824133560', option:'10번' },
+  F: { url:'https://boardm.co.kr/product/detail.html?product_no=7171', option:'L' },
+  G: { url:'https://boardm.co.kr/product/detail.html?product_no=7171', option:'XL' },
+  H: { url:'https://smartstore.naver.com/gladiakfarm/products/10377353021', option:'105X105x35mm' },
+  I: { url:'https://smartstore.naver.com/modeunstoa/products/9874464661', option:'J-6' },
+  J: { url:'https://smartstore.naver.com/oposys/products/7559274760', option:'-' },
+  K: { url:'https://www.coupang.com/vp/products/7814464766?vendorItemId=93475108031&sourceType=sdp_buybox_winner_offer', option:'Lx화이트x2개' },
+  L: { url:'https://smartstore.naver.com/soholiving/products/4772901420', option:'뉴 심플멀티케이스/대형(45mm)/투명' }
+};
+
+const CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+function getChosung(str){
+  let out='';
+  for (const ch of str){
+    const code = ch.charCodeAt(0) - 0xAC00;
+    out += (code>=0 && code<=11171) ? CHO[Math.floor(code/588)] : ch;
+  }
+  return out;
+}
+const gateContent = document.getElementById('gateContent');
+const appEl = document.getElementById('app');
+
+let currentRole = 'viewer';
+let games = [];
+let currentGameId = null;
+let currentMode = 'photo'; // 'photo' | 'table'
+let currentPhotoIdx = 0;
+let photoUrlCache = {}; // storagePath -> 다운로드 URL (매번 다시 안 구해오게)
+let labelRectsCache_ = []; // 정렬 가이드용: 각 라벨의 실제 화면 위치
+
+// ============================================================
+// 로그인 화면 렌더링
+// ============================================================
+function renderLoginButton(){
+  gateContent.innerHTML = `
+    <div class="brand">RED BUTTON<span class="r-mark">®</span></div>
+    <p>레드버튼 오거나이징 가이드는 사내 전용 자료입니다.<br>구글 계정으로 로그인해주세요.</p>
+    <button class="btn btn-google" id="googleLoginBtn">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84c-.21 1.13-.85 2.09-1.81 2.73v2.27h2.93c1.71-1.58 2.69-3.9 2.69-6.64z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.93-2.27c-.81.54-1.85.86-3.03.86-2.33 0-4.3-1.57-5-3.68H1.02v2.34C2.5 15.98 5.52 18 9 18z"/><path fill="#FBBC05" d="M4 10.72c-.18-.54-.28-1.12-.28-1.72s.1-1.18.28-1.72V4.94H1.02C.37 6.22 0 7.57 0 9s.37 2.78 1.02 4.06L4 10.72z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.59-2.59C13.46.89 11.43 0 9 0 5.52 0 2.5 2.02 1.02 4.94L4 7.28C4.7 5.17 6.67 3.58 9 3.58z"/></svg>
+      Google로 로그인
+    </button>
+    <div class="error-box" id="errorBox"></div>
+  `;
+  document.getElementById('googleLoginBtn').addEventListener('click', handleGoogleLogin);
+}
+
+function renderChecking(){
+  gateContent.innerHTML = `
+    <div class="brand">RED BUTTON<span class="r-mark">®</span></div>
+    <p>로그인 확인 중...</p>
+  `;
+}
+
+function renderPending(email, isNew){
+  gateContent.innerHTML = `
+    <div class="brand">RED BUTTON<span class="r-mark">®</span></div>
+    <p style="margin-top:10px;">${isNew ? '접근 권한 요청이 접수되었습니다.' : '아직 승인 대기 중입니다.'}<br>담당자의 승인 후 이용하실 수 있습니다.</p>
+    <p style="margin-top:14px; font-size:12px;">로그인 계정: ${email}</p>
+    <button class="btn btn-ghost" id="logoutBtn2">다른 계정으로 로그인</button>
+  `;
+  document.getElementById('logoutBtn2').addEventListener('click', ()=>signOut(auth));
+}
+
+async function renderProfileForm(email){
+  gateContent.innerHTML = `
+    <div class="brand">RED BUTTON<span class="r-mark">®</span></div>
+    <p style="margin-bottom:14px;">처음 로그인하셨네요. 접근 요청을 위해<br>아래 정보를 입력해주세요.</p>
+    <div id="profileFormBody"><p>불러오는 중...</p></div>
+  `;
+  let stores = [];
+  try{
+    const snap = await getDocs(collection(db, 'stores'));
+    snap.forEach(d => stores.push({ code: d.id, name: d.data().name }));
+  }catch(e){ console.error(e); }
+  stores.sort((a,b)=> String(a.name).localeCompare(String(b.name), 'ko'));
+
+  document.getElementById('profileFormBody').innerHTML = `
+    <div class="field">
+      <label>매장</label>
+      <select id="storeSelect">
+        <option value="">매장을 선택하세요</option>
+        ${stores.map(s=>`<option value="${s.code}">${s.name}</option>`).join('')}
+      </select>
+    </div>
+    <div class="field">
+      <label>이름</label>
+      <input type="text" id="nameInput" placeholder="홍길동">
+    </div>
+    <div class="field">
+      <label>직급</label>
+      <select id="positionSelect">
+        <option value="">직급을 선택하세요</option>
+        ${POSITIONS.map(p=>`<option value="${p}">${p}</option>`).join('')}
+      </select>
+    </div>
+    <div class="error-box" id="profileErrorBox"></div>
+    <button class="btn btn-google" id="submitProfileBtn" style="background:var(--accent); color:#fff; border:none;">제출</button>
+  `;
+  document.getElementById('submitProfileBtn').addEventListener('click', ()=>submitProfile(email));
+}
+
+let myApprovedRole = 'viewer'; // 로그인 시 실제로 승인된 권한 (강퇴돼도 이 값은 안 바뀜 - 다시 편집자 시도할 자격이 있는지 판단용)
+
+async function enterApp(email, role){
+  currentRole = role;
+  myApprovedRole = role;
+  document.getElementById('loginGate').style.display = 'none';
+  document.getElementById('appRoot').style.display = 'block';
+  document.getElementById('roleLabel').textContent = email;
+  document.getElementById('newGameBtn').style.display = role === 'editor' ? 'inline-flex' : 'none';
+  if (myApprovedRole === 'editor'){
+    document.getElementById('roleToggle').style.display = 'flex';
+  }
+  updateRoleToggleUI_();
+  await loadGames();
+  renderList();
+}
+
+function updateRoleToggleUI_(){
+  const vb = document.getElementById('roleViewerBtn'), eb = document.getElementById('roleEditorBtn');
+  if (vb) vb.classList.toggle('active', currentRole==='viewer');
+  if (eb) eb.classList.toggle('active', currentRole==='editor');
+  const newBtn = document.getElementById('newGameBtn');
+  if (newBtn) newBtn.style.display = currentRole==='editor' ? 'inline-flex' : 'none';
+  const dashBtn = document.getElementById('dashboardBtn');
+  if (dashBtn) dashBtn.style.display = currentRole==='editor' ? 'inline-flex' : 'none';
+  const accBtn = document.getElementById('accessBtn');
+  if (accBtn) accBtn.style.display = currentRole==='editor' ? 'inline-flex' : 'none';
+  const migBtn = document.getElementById('migrateBtn');
+  if (migBtn) migBtn.style.display = currentRole==='editor' ? 'inline-flex' : 'none';
+}
+
+/** 뷰어 ↔ 편집자 전환 버튼. 편집자로 전환하면서 지금 보고 있는 게임의 편집 잠금도 함께 확인합니다. */
+async function setRole(r){
+  if (r === 'editor' && myApprovedRole !== 'editor') return; // 애초에 편집 권한이 없는 계정
+  currentRole = r;
+  updateRoleToggleUI_();
+
+  if (currentGameId){
+    if (r === 'editor'){
+      const gotLock = await ensureEditLockForGame_(currentGameId);
+      if (!gotLock){
+        currentRole = 'viewer';
+        updateRoleToggleUI_();
+      } else {
+        enterPresence_(currentGameId);
+      }
+    } else {
+      leavePresence_();
+    }
+    renderDetail();
+  }
+}
+
+// ============================================================
+// 로그인 처리
+// ============================================================
+async function handleGoogleLogin(){
+  try{
+    await signInWithPopup(auth, provider);
+  }catch(e){
+    console.error(e);
+    const box = document.getElementById('errorBox');
+    if (box){ box.style.display='block'; box.textContent = '로그인에 실패했습니다. 다시 시도해주세요.'; }
+  }
+}
+
+function doLogout(){ leavePresence_(); signOut(auth); }
+
+async function checkAccessAndRender(user){
+  const email = user.email.toLowerCase().trim();
+  renderChecking();
+
+  try{
+    const [editorSnap, viewerSnap, pendingSnap] = await Promise.all([
+      getDoc(doc(db, 'editors', email)),
+      getDoc(doc(db, 'viewers', email)),
+      getDoc(doc(db, 'pending', email)),
+    ]);
+
+    if (editorSnap.exists()) return enterApp(email, 'editor');
+    if (viewerSnap.exists()) return enterApp(email, 'viewer');
+    if (pendingSnap.exists()) return renderPending(email, false);
+    return renderProfileForm(email);
+  }catch(e){
+    console.error('로그인 확인 실패:', e);
+    gateContent.innerHTML = `
+      <div class="brand">RED BUTTON<span class="r-mark">®</span></div>
+      <p style="color:var(--danger);">로그인 확인 중 오류가 발생했습니다.<br>(개발자 도구 콘솔에 자세한 내용이 남습니다)</p>
+      <p style="margin-top:8px; font-size:11px; word-break:break-all;">${e.code || e.message || e}</p>
+      <button class="btn btn-ghost" id="logoutBtnErr">다시 로그인</button>
+    `;
+    document.getElementById('logoutBtnErr').addEventListener('click', ()=>signOut(auth));
+  }
+}
+
+async function submitProfile(email){
+  const storeCode = document.getElementById('storeSelect').value;
+  const name = document.getElementById('nameInput').value.trim();
+  const position = document.getElementById('positionSelect').value;
+  const errorBox = document.getElementById('profileErrorBox');
+  if (!storeCode || !name || !position){
+    errorBox.style.display = 'block';
+    errorBox.textContent = '매장, 이름, 직급을 모두 입력해주세요.';
+    return;
+  }
+  await setDoc(doc(db, 'pending', email), { name, position, storeCode, requestedAt: Date.now() });
+  renderPending(email, true);
+}
+
+// ============================================================
+// 게임 목록 / 상세 (핵심 CRUD) - 이번 단계에서는 사진 없이 케이스만
+// ============================================================
+async function loadGames(){
+  const snap = await getDocs(collection(db, 'games'));
+  games = [];
+  snap.forEach(d => games.push({ id: d.id, ...d.data() }));
+  games.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||''), 'ko'));
+}
+
+/**
+ * ============================================================
+ * 권한 관리 (승인 대기 처리, 편집자/뷰어 목록, 매장 관리)
+ * ============================================================
+ */
+const POSITIONS_ = ['점주','점장','매니저','트레이너','버트너','본사'];
+
+async function openAccessManagement(){
+  leavePresence_();
+  currentGameId = null;
+  showDashboard_ = false;
+  appEl.innerHTML = `<p>불러오는 중...</p>`;
+  await renderAccessManagement();
+}
+
+async function renderAccessManagement(){
+  const [pendingSnap, editorsSnap, viewersSnap, storesSnap] = await Promise.all([
+    getDocs(collection(db, 'pending')),
+    getDocs(collection(db, 'editors')),
+    getDocs(collection(db, 'viewers')),
+    getDocs(collection(db, 'stores')),
+  ]);
+  const pending = []; pendingSnap.forEach(d=>pending.push({ email: d.id, ...d.data() }));
+  const editors = []; editorsSnap.forEach(d=>editors.push({ email: d.id, ...d.data() }));
+  const viewers = []; viewersSnap.forEach(d=>viewers.push({ email: d.id, ...d.data() }));
+  const stores = []; storesSnap.forEach(d=>stores.push({ code: d.id, ...d.data() }));
+  stores.sort((a,b)=> String(a.name||'').localeCompare(String(b.name||''), 'ko'));
+
+  const storeName_ = (code)=> stores.find(s=>s.code===code)?.name || code;
+
+  appEl.innerHTML = `
+    <button class="back" onclick="renderList()">← 목록으로</button>
+    <h2 style="margin:0 0 16px;">🔑 권한 관리</h2>
+
+    <h3 style="font-size:14px;">승인 대기 (${pending.length})</h3>
+    ${pending.length ? pending.map(p=>`
+      <div style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); flex-wrap:wrap;">
+        <div style="flex:1; min-width:180px;">
+          <div style="font-weight:700; font-size:13px;">${p.name||'-'} · ${p.position||'-'}</div>
+          <div style="font-size:11.5px; color:var(--ink-soft);">${storeName_(p.storeCode)} · ${p.email}</div>
+        </div>
+        <button class="btn btn-primary2" style="width:auto; padding:5px 10px; font-size:12px;" onclick="approveRequest('${p.email}','editor')">편집자로 승인</button>
+        <button class="btn btn-ghost2" style="width:auto; padding:5px 10px; font-size:12px;" onclick="approveRequest('${p.email}','viewer')">뷰어로 승인</button>
+        <button class="btn btn-ghost2" style="width:auto; padding:5px 10px; font-size:12px;" onclick="rejectRequest('${p.email}')">거절</button>
+      </div>
+    `).join('') : `<p style="font-size:12.5px; color:var(--ink-soft);">대기 중인 요청이 없습니다.</p>`}
+
+    <h3 style="font-size:14px; margin-top:24px;">직접 등록</h3>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;">
+      <input type="text" id="directEmailInput" placeholder="이메일 주소" style="flex:1; min-width:200px; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-size:13px;">
+      <button class="btn btn-primary2" style="width:auto;" onclick="addDirectAccess('editor')">편집자로 등록</button>
+      <button class="btn btn-ghost2" style="width:auto;" onclick="addDirectAccess('viewer')">뷰어로 등록</button>
+    </div>
+
+    <h3 style="font-size:14px;">편집자 (${editors.length})</h3>
+    <div style="margin-bottom:20px;">
+      ${editors.map(e=>`
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--line); font-size:12.5px;">
+          <span>${e.name ? `${e.name} · ` : ''}${e.email}</span>
+          <button class="btn btn-ghost2" style="width:auto; padding:4px 8px; font-size:11.5px;" onclick="removeAccess('${e.email}','editors')">제거</button>
+        </div>
+      `).join('') || `<p style="font-size:12.5px; color:var(--ink-soft);">없음</p>`}
+    </div>
+
+    <h3 style="font-size:14px;">뷰어 (${viewers.length})</h3>
+    <div style="margin-bottom:20px;">
+      ${viewers.map(v=>`
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--line); font-size:12.5px;">
+          <span>${v.name ? `${v.name} · ${storeName_(v.storeCode)} · ` : ''}${v.email}</span>
+          <button class="btn btn-ghost2" style="width:auto; padding:4px 8px; font-size:11.5px;" onclick="removeAccess('${v.email}','viewers')">제거</button>
+        </div>
+      `).join('') || `<p style="font-size:12.5px; color:var(--ink-soft);">없음</p>`}
+    </div>
+
+    <h3 style="font-size:14px;">매장 관리 (${stores.length})</h3>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+      <input type="text" id="storeCodeInput" placeholder="매장 코드" style="width:140px; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-size:13px;">
+      <input type="text" id="storeNameInput" placeholder="매장 이름" style="flex:1; min-width:140px; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-size:13px;">
+      <button class="btn btn-primary2" style="width:auto;" onclick="addStore()">추가</button>
+    </div>
+    <div style="max-height:240px; overflow-y:auto;">
+      ${stores.map(s=>`
+        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--line); font-size:12.5px;">
+          <span>${s.name} <span style="color:var(--ink-soft); font-family:var(--mono); font-size:11px;">${s.code}</span></span>
+          <button class="btn btn-ghost2" style="width:auto; padding:4px 8px; font-size:11.5px;" onclick="removeStore('${s.code}')">삭제</button>
+        </div>
+      `).join('') || `<p style="font-size:12.5px; color:var(--ink-soft);">없음</p>`}
+    </div>
+  `;
+}
+
+async function approveRequest(email, role){
+  const pendingSnap = await getDoc(doc(db, 'pending', email));
+  const profile = pendingSnap.data() || {};
+  await setDoc(doc(db, role === 'editor' ? 'editors' : 'viewers', email), { ...profile, approvedAt: Date.now() });
+  await deleteDoc(doc(db, 'pending', email));
+  renderAccessManagement();
+}
+
+async function rejectRequest(email){
+  if (!confirm(`${email} 요청을 거절할까요?`)) return;
+  await deleteDoc(doc(db, 'pending', email));
+  renderAccessManagement();
+}
+
+async function addDirectAccess(role){
+  const input = document.getElementById('directEmailInput');
+  const email = input.value.trim().toLowerCase();
+  if (!email || !email.includes('@')){ alert('올바른 이메일을 입력해주세요.'); return; }
+  await setDoc(doc(db, role === 'editor' ? 'editors' : 'viewers', email), { addedAt: Date.now() });
+  renderAccessManagement();
+}
+
+async function removeAccess(email, collectionName){
+  if (!confirm(`${email}님의 권한을 제거할까요?`)) return;
+  await deleteDoc(doc(db, collectionName, email));
+  renderAccessManagement();
+}
+
+async function addStore(){
+  const code = document.getElementById('storeCodeInput').value.trim();
+  const name = document.getElementById('storeNameInput').value.trim();
+  if (!code || !name){ alert('매장 코드와 이름을 모두 입력해주세요.'); return; }
+  await setDoc(doc(db, 'stores', code), { name });
+  renderAccessManagement();
+}
+
+async function removeStore(code){
+  if (!confirm('이 매장을 삭제할까요?')) return;
+  await deleteDoc(doc(db, 'stores', code));
+  renderAccessManagement();
+}
+
+/**
+ * ============================================================
+ * 기존 시스템(Apps Script + 드라이브) 데이터 가져오기
+ * ============================================================
+ * Apps Script에서 exportAllDataForMigration_ 함수로 내보낸 JSON 파일을
+ * 업로드하면, 사진은 Storage에 올리고 나머지 데이터는 Firestore에 씁니다.
+ */
+function openMigrationTool(){
+  leavePresence_();
+  currentGameId = null;
+  showDashboard_ = false;
+  appEl.innerHTML = `
+    <button class="back" onclick="renderList()">← 목록으로</button>
+    <h2 style="margin:0 0 10px;">📥 데이터 가져오기</h2>
+    <p style="font-size:12.5px; color:var(--ink-soft); max-width:520px;">
+      기존 시스템(Apps Script)에서 <code>exportAllDataForMigration_</code> 함수를 실행해서 만든
+      내보내기 파일들(<code>firebase_migration_meta_...json</code>, <code>firebase_migration_games_...json</code> 여러 개)을
+      전부 다운로드한 뒤, 아래에서 <b>한꺼번에 여러 개 선택</b>해주세요. 게임 수가 많으면 시간이 꽤 걸릴 수 있습니다 — 창을 닫지 말고 기다려주세요.
+    </p>
+    <input type="file" id="migrationFileInput" accept="application/json" multiple style="margin:14px 0;">
+    <div>
+      <button class="btn btn-primary2" style="width:auto;" onclick="startMigration_()">가져오기 시작</button>
+    </div>
+    <div id="migrationLog" style="margin-top:16px; font-size:12.5px; font-family:var(--mono); white-space:pre-wrap; background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:14px; max-height:400px; overflow-y:auto;"></div>
+  `;
+}
+
+function migLog_(msg){
+  const el = document.getElementById('migrationLog');
+  if (el) el.textContent += msg + '\n';
+  if (el) el.scrollTop = el.scrollHeight;
+}
+
+function dataURLtoBlob_(dataUrl){
+  const parts = dataUrl.split(',');
+  const mimeMatch = parts[0].match(/:(.*?);/);
+  const mime = mimeMatch ? mimeMatch[1] : 'image/jpeg';
+  const binary = atob(parts[1]);
+  const array = new Uint8Array(binary.length);
+  for (let i=0; i<binary.length; i++) array[i] = binary.charCodeAt(i);
+  return new Blob([array], { type: mime });
+}
+
+async function startMigration_(){
+  const input = document.getElementById('migrationFileInput');
+  const files = Array.from(input.files || []);
+  if (!files.length){ alert('파일을 선택해주세요.'); return; }
+
+  // 선택된 파일들을 전부 읽어서, "메타(계정/매장)"와 "게임 묶음"들을 하나로 합칩니다.
+  let merged = { editors: [], viewers: [], pending: [], stores: [], profiles: {}, games: [] };
+  for (const file of files){
+    try{
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (data.editors) merged.editors.push(...data.editors);
+      if (data.viewers) merged.viewers.push(...data.viewers);
+      if (data.pending) merged.pending.push(...data.pending);
+      if (data.stores) merged.stores.push(...data.stores);
+      if (data.profiles) Object.assign(merged.profiles, data.profiles);
+      if (data.games) merged.games.push(...data.games);
+    }catch(e){
+      migLog_(`❌ 파일을 읽지 못했습니다: ${file.name}`);
+      return;
+    }
+  }
+  const data = merged;
+
+  migLog_(`불러온 파일 ${files.length}개: 게임 ${data.games.length}개, 편집자 ${data.editors.length}명, 뷰어 ${data.viewers.length}명, 매장 ${data.stores.length}개`);
+  if (!confirm('가져오기를 시작할까요? 시간이 걸릴 수 있습니다.')) return;
+
+  // ---- 1) 매장 ----
+  migLog_('\n[1/4] 매장 정보 등록 중...');
+  for (const s of data.stores){
+    try{ await setDoc(doc(db, 'stores', s.code), { name: s.name }); }
+    catch(e){ migLog_(`  ⚠ 매장 등록 실패: ${s.code} - ${e.message}`); }
+  }
+  migLog_(`  완료 (${data.stores.length}개)`);
+
+  // ---- 2) 편집자/뷰어/대기 ----
+  migLog_('\n[2/4] 편집자·뷰어 계정 등록 중...');
+  const profiles = data.profiles;
+  for (const email of data.editors){
+    try{ await setDoc(doc(db, 'editors', email), { ...(profiles[email]||{}), addedAt: Date.now() }); }
+    catch(e){ migLog_(`  ⚠ 편집자 등록 실패: ${email}`); }
+  }
+  for (const email of data.viewers){
+    try{ await setDoc(doc(db, 'viewers', email), { ...(profiles[email]||{}), addedAt: Date.now() }); }
+    catch(e){ migLog_(`  ⚠ 뷰어 등록 실패: ${email}`); }
+  }
+  for (const email of data.pending){
+    try{ await setDoc(doc(db, 'pending', email), { ...(profiles[email]||{}), requestedAt: Date.now() }); }
+    catch(e){ migLog_(`  ⚠ 대기 등록 실패: ${email}`); }
+  }
+  migLog_(`  완료 (편집자 ${data.editors.length}명, 뷰어 ${data.viewers.length}명, 대기 ${data.pending.length}명)`);
+
+  // ---- 3) 게임 (사진은 Storage로) ----
+  migLog_('\n[3/4] 게임 데이터 가져오는 중...');
+  const games_ = data.games;
+  for (let i=0; i<games_.length; i++){
+    const g = games_[i];
+    try{
+      const photos = [];
+      for (const p of (g.photos||[])){
+        const newPhoto = { markers: p.markers||[], labels: p.labels||[] };
+        if (p.imageUrl && p.imageUrl.startsWith('data:')){
+          const blob = dataURLtoBlob_(p.imageUrl);
+          const storagePath = `games/${g.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.jpg`;
+          await uploadBytes(ref(storage, storagePath), blob);
+          newPhoto.storagePath = storagePath;
+        }
+        photos.push(newPhoto);
+      }
+      const gameDoc = {
+        name: g.name || '',
+        cases: g.cases || [],
+        photos: photos,
+        guideDone: !!g.guideDone,
+        completedBy: g.completedBy || [],
+        note: g.note || '',
+        updatedAt: Date.now()
+      };
+      await setDoc(doc(db, 'games', String(g.id)), gameDoc);
+      migLog_(`  (${i+1}/${games_.length}) ${g.name} - 완료`);
+    }catch(e){
+      migLog_(`  (${i+1}/${games_.length}) ${g.name} - ❌ 실패: ${e.message}`);
+    }
+  }
+
+  // ---- 4) 마무리 ----
+  migLog_('\n[4/4] 목록 새로고침 중...');
+  await loadGames();
+  migLog_('\n✅ 가져오기 완료!');
+}
+
+/**
+ * ============================================================
+ * 구매 가이드 (뷰어 포함 누구나 볼 수 있음)
+ * ============================================================
+ */
+let purchaseGuideSelected_ = new Set();
+let purchaseGuideSearch_ = '';
+
+function openPurchaseGuide(){
+  leavePresence_();
+  currentGameId = null;
+  showDashboard_ = false;
+
+  appEl.innerHTML = `
+    <button class="back" onclick="renderList()">← 목록으로</button>
+    <h2 style="margin:0 0 6px;">🛒 구매 가이드</h2>
+    <p style="font-size:12.5px; color:var(--ink-soft); max-width:640px; line-height:1.5; margin:0 0 12px;">
+      전체 게임 목록에서 필요한 게임을 선택하면, 그 게임들에 필요한 케이스 수량과 구매 링크를 안내합니다.
+      "TOP50 게임 선택"을 누르면 TOP50 중 플라스틱 케이스로 정리하는 ${TOP50_CASE_GAMES.length}종이 한 번에 선택됩니다.
+      매장에 이미 정리된 게임은 체크를 해제해주세요.
+    </p>
+    <div style="display:flex; gap:8px; margin-bottom:16px;">
+      <button class="btn btn-primary2" style="width:auto;" onclick="selectAllTop50Games()">TOP50 게임 선택</button>
+      <button class="btn btn-ghost2" style="width:auto;" onclick="deselectAllPurchaseGames()">전체 해제</button>
+    </div>
+    <div class="pg-body">
+      <div class="pg-panel">
+        <h3 id="pgSelectedCount">게임 선택</h3>
+        <input type="text" id="pgSearchInput" class="pg-search" placeholder="게임 이름 검색">
+        <div class="pg-game-list" id="pgGameList"></div>
+      </div>
+      <div class="pg-panel">
+        <h3>필요한 케이스</h3>
+        <div id="pgCaseSummary"></div>
+        <p style="font-size:11.5px; color:var(--ink-soft); margin-top:14px; line-height:1.5;">
+          ※ 실시간 재고 확인은 자동으로 제공되지 않습니다. 구매 링크를 눌러 직접 확인해주세요.
+        </p>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('pgSearchInput').addEventListener('input', (e)=>{
+    purchaseGuideSearch_ = e.target.value;
+    renderPurchaseGameList_();
+  });
+
+  renderPurchaseGameList_();
+  renderPurchaseCaseSummary_();
+}
+
+function renderPurchaseGameList_(){
+  const listEl = document.getElementById('pgGameList');
+  const countEl = document.getElementById('pgSelectedCount');
+  if (!listEl) return;
+
+  const top50Ids = new Set(TOP50_CASE_GAMES.map(g=>g.id));
+  const q = purchaseGuideSearch_.trim();
+  const visibleGames = games
+    .filter(g => !q || (g.name||'').includes(q) || getChosung(g.name||'').includes(getChosung(q)))
+    .slice()
+    .sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''), 'ko'));
+
+  listEl.innerHTML = visibleGames.map(g=>{
+    const isTop50 = top50Ids.has(String(g.id));
+    const checked = purchaseGuideSelected_.has(String(g.id));
+    return `
+      <label class="pg-game-row">
+        <input type="checkbox" ${checked?'checked':''} onchange="togglePurchaseGameSelect('${g.id}', this.checked)">
+        <span class="pg-game-name">${g.name}</span>
+        ${isTop50 ? '<span class="pg-top50-badge">TOP50</span>' : ''}
+        <span class="pg-game-id">ID ${g.id}</span>
+      </label>`;
+  }).join('') || '<p style="font-size:12.5px; color:var(--ink-soft);">검색 결과가 없습니다.</p>';
+
+  if (countEl) countEl.textContent = `게임 선택 (${purchaseGuideSelected_.size}개 선택됨)`;
+}
+
+function renderPurchaseCaseSummary_(){
+  const el = document.getElementById('pgCaseSummary');
+  if (!el) return;
+
+  const counts = {};
+  purchaseGuideSelected_.forEach(id=>{
+    const g = games.find(x=>String(x.id)===String(id));
+    if (g && g.cases) g.cases.forEach(c=>{ counts[c.caseType] = (counts[c.caseType]||0) + 1; });
+  });
+  const neededTypes = CASE_TYPES.filter(t=>counts[t]);
+
+  if (!neededTypes.length){
+    el.innerHTML = `<p style="font-size:12.5px; color:var(--ink-soft);">왼쪽에서 게임을 선택하면 필요한 케이스가 여기 표시됩니다.</p>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <table class="pg-table">
+      <thead><tr><th>종류</th><th>사이즈</th><th>필요 수량</th><th>옵션</th><th>구매</th></tr></thead>
+      <tbody>
+        ${neededTypes.map(t=>{
+          const p = CASE_PRODUCTS[t] || {};
+          return `
+          <tr>
+            <td><span class="case-badge case-${t}">${t}</span></td>
+            <td style="font-family:var(--mono); font-size:12px; color:var(--ink-soft);">${CASE_SIZES[t]||'-'}mm</td>
+            <td style="font-weight:700;">${counts[t]}개</td>
+            <td style="font-size:12px; color:var(--ink-soft);">${p.option||'-'}</td>
+            <td>${p.url ? `<a href="${p.url}" target="_blank" rel="noopener" class="btn btn-primary2" style="width:auto; padding:6px 12px; font-size:12.5px; display:inline-flex;">구매하기 ↗</a>` : '-'}</td>
+          </tr>`;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+}
+
+function togglePurchaseGameSelect(id, checked){
+  if (checked) purchaseGuideSelected_.add(id); else purchaseGuideSelected_.delete(id);
+  renderPurchaseGameList_();
+  renderPurchaseCaseSummary_();
+}
+function selectAllTop50Games(){
+  TOP50_CASE_GAMES.forEach(g=>purchaseGuideSelected_.add(g.id));
+  renderPurchaseGameList_();
+  renderPurchaseCaseSummary_();
+}
+function deselectAllPurchaseGames(){
+  purchaseGuideSelected_.clear();
+  renderPurchaseGameList_();
+  renderPurchaseCaseSummary_();
+}
+
+let showDashboard_ = false;
+let dashboardFilter_ = 'all'; // 'all' | 'done' | 'undone'
+
+function openDashboard(){
+  leavePresence_();
+  showDashboard_ = true;
+  currentGameId = null;
+  renderDashboard();
+}
+function closeDashboard(){
+  showDashboard_ = false;
+  renderList();
+}
+function setDashboardFilter(v){ dashboardFilter_ = v; renderDashboard(); }
+
+function renderDashboard(){
+  const total = games.length;
+  const doneCount = games.filter(g=>g.guideDone).length;
+  const pct = total ? Math.round(doneCount/total*100) : 0;
+
+  let filtered = games;
+  if (dashboardFilter_ === 'done') filtered = games.filter(g=>g.guideDone);
+  if (dashboardFilter_ === 'undone') filtered = games.filter(g=>!g.guideDone);
+  filtered = filtered.slice().sort((a,b)=> String(a.name||'').localeCompare(String(b.name||''), 'ko'));
+
+  appEl.innerHTML = `
+    <button class="back" onclick="closeDashboard()">← 목록으로</button>
+    <h2 style="margin:0 0 6px;">📊 작업 진행 현황</h2>
+    <p style="font-size:13px; color:var(--ink-soft); margin:0 0 16px;">${pct}% · 가이드 완료 ${doneCount}/${total}개</p>
+    <div style="height:8px; background:var(--bg); border-radius:99px; overflow:hidden; margin-bottom:16px;">
+      <div style="height:100%; width:${pct}%; background:var(--accent);"></div>
+    </div>
+    <div class="crop-toolbar" style="margin-bottom:14px;">
+      <button onclick="setDashboardFilter('all')" style="${dashboardFilter_==='all'?'background:var(--ink); color:#fff;':''}">전체</button>
+      <button onclick="setDashboardFilter('undone')" style="${dashboardFilter_==='undone'?'background:var(--ink); color:#fff;':''}">가이드 미완료만</button>
+      <button onclick="setDashboardFilter('done')" style="${dashboardFilter_==='done'?'background:var(--ink); color:#fff;':''}">가이드 완료만</button>
+    </div>
+    <table class="case-table">
+      <thead><tr><th>이름</th><th>사진</th><th>가이드완료</th><th>매장 완료</th><th></th></tr></thead>
+      <tbody>
+        ${filtered.map(g=>`
+          <tr>
+            <td>${g.name}</td>
+            <td>${(g.photos||[]).length ? '있음' : '-'}</td>
+            <td><input type="checkbox" ${g.guideDone?'checked':''} onchange="toggleGuideDoneFor(this, '${g.id}')"></td>
+            <td>${(g.completedBy||[]).length}개</td>
+            <td><button class="btn btn-ghost2" style="width:auto; padding:5px 10px; font-size:12px;" onclick="openGame('${g.id}')">열기</button></td>
+          </tr>
+        `).join('') || `<tr><td colspan="5" style="color:var(--ink-soft);">해당하는 게임이 없습니다.</td></tr>`}
+      </tbody>
+    </table>
+  `;
+}
+
+async function toggleGuideDoneFor(checkbox, gameId){
+  const g = games.find(x=>x.id===gameId);
+  g.guideDone = checkbox.checked;
+  await updateDoc(doc(db, 'games', gameId), { guideDone: checkbox.checked });
+}
+
+let listSearch_ = '';
+let listSort_ = 'name'; // 'name' | 'updated'
+
+function renderList(){
+  leavePresence_();
+  currentGameId = null;
+
+  appEl.innerHTML = `
+    <div style="display:flex; gap:8px; margin-bottom:14px;">
+      <input type="text" id="listSearchInput" placeholder="게임 이름 검색 (초성 가능)" value="${listSearch_}"
+        style="flex:1; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-size:13px;">
+      <select id="listSortSelect" style="padding:9px 10px; border:1px solid var(--line); border-radius:8px; font-size:13px;">
+        <option value="name" ${listSort_==='name'?'selected':''}>이름순</option>
+        <option value="updated" ${listSort_==='updated'?'selected':''}>최근 수정순</option>
+      </select>
+    </div>
+    <div class="game-list" id="gameListResults"></div>
+  `;
+
+  // 검색창은 매 입력마다 다시 만들지 않고(oninput으로 전체를 다시 그리면 한글 조합이
+  // 깨집니다), 결과 목록만 갱신합니다.
+  document.getElementById('listSearchInput').addEventListener('input', (e)=>{
+    listSearch_ = e.target.value;
+    renderGameListResults_();
+  });
+  document.getElementById('listSortSelect').addEventListener('change', (e)=>{
+    listSort_ = e.target.value;
+    renderGameListResults_();
+  });
+
+  renderGameListResults_();
+}
+
+function renderGameListResults_(){
+  const container = document.getElementById('gameListResults');
+  if (!container) return;
+  const editable = currentRole === 'editor';
+  const myEmail = auth.currentUser?.email?.toLowerCase();
+
+  let filtered = games.filter(g => !listSearch_ || (g.name||'').includes(listSearch_) || getChosung(g.name||'').includes(getChosung(listSearch_)));
+  filtered = filtered.slice().sort((a,b)=>{
+    if (listSort_ === 'updated') return (b.updatedAt||0) - (a.updatedAt||0);
+    return String(a.name||'').localeCompare(String(b.name||''), 'ko');
+  });
+
+  container.innerHTML = filtered.length ? filtered.map(g=>{
+    const done = myEmail && (g.completedBy||[]).includes(myEmail);
+    return `
+    <div class="game-card" style="position:relative;">
+      <div onclick="openGame('${g.id}')" style="cursor:pointer;">
+        <div class="name">${g.name || '(이름 없음)'} ${g.guideDone ? '<span style="color:var(--accent); font-size:11px;">● 가이드완료</span>' : ''}</div>
+        <div class="meta">케이스 ${(g.cases||[]).length}개</div>
+      </div>
+      <label style="display:flex; align-items:center; gap:5px; margin-top:8px; font-size:11.5px; color:var(--ink-soft); cursor:pointer;">
+        <input type="checkbox" ${done?'checked':''} onclick="event.stopPropagation(); toggleWorkComplete('${g.id}', this.checked)"> 작업 완료
+      </label>
+      ${editable ? `<button onclick="event.stopPropagation(); deleteGame('${g.id}')" style="position:absolute; top:12px; right:12px; border:none; background:none; color:var(--ink-soft); cursor:pointer; font-size:13px;">✕</button>` : ''}
+    </div>
+  `;}).join('') : '<p>검색 결과가 없습니다.</p>';
+}
+
+async function toggleWorkComplete(gameId, checked){
+  const myEmail = auth.currentUser?.email?.toLowerCase();
+  if (!myEmail) return;
+  const gameRef = doc(db, 'games', gameId);
+  const g = games.find(x=>x.id===gameId);
+  g.completedBy = g.completedBy || [];
+  if (checked && !g.completedBy.includes(myEmail)) g.completedBy.push(myEmail);
+  if (!checked) g.completedBy = g.completedBy.filter(e=>e!==myEmail);
+  await updateDoc(gameRef, { completedBy: g.completedBy });
+}
+
+async function deleteGame(gameId){
+  if (!confirm('이 게임을 삭제할까요? 되돌릴 수 없습니다.')) return;
+  await deleteDoc(doc(db, 'games', gameId));
+  await loadGames();
+  renderList();
+}
+
+async function createNewGame(){
+  const name = prompt('새 게임 이름을 입력하세요:');
+  if (!name || !name.trim()) return;
+  const ref = await addDoc(collection(db, 'games'), {
+    name: name.trim(),
+    cases: [],
+    guideDone: false,
+    completedBy: [],
+    note: '',
+    updatedAt: Date.now()
+  });
+  await loadGames();
+  openGame(ref.id);
+}
+
+async function openGame(id){
+  leavePresence_(); // 이전 게임에 있던 접속/잠금 정리
+  currentGameId = id;
+  currentMode = 'photo';
+  currentPhotoIdx = 0;
+  renderDetail();
+
+  if (currentRole === 'editor'){
+    const gotLock = await ensureEditLockForGame_(id);
+    if (!gotLock){
+      currentRole = 'viewer';
+      updateRoleToggleUI_();
+    } else {
+      enterPresence_(id);
+    }
+    renderDetail();
+  }
+}
+
+function renderDetail(){
+  const g = games.find(x=>x.id===currentGameId);
+  if (!g){ renderList(); return; }
+  const editable = currentRole === 'editor';
+
+  appEl.innerHTML = `
+    <button class="back" onclick="renderList()">← 목록으로</button>
+    <div id="presenceBannerSlot"></div>
+    <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
+      <div>
+        <h2 style="margin:0 0 6px;">${g.name}</h2>
+        ${editable ? `
+          <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-soft); cursor:pointer;">
+            <input type="checkbox" ${g.guideDone?'checked':''} onchange="toggleGuideDone(this.checked)"> 가이드 제작 완료
+          </label>
+          <div style="display:flex; gap:8px; margin-top:10px;">
+            <button class="btn btn-primary2" style="width:auto; padding:6px 14px; font-size:12.5px;" onclick="saveGame()">💾 저장</button>
+            <button class="btn btn-ghost2" style="width:auto; padding:6px 14px; font-size:12.5px;" onclick="showHistoryModal_()">🕐 이전 버전</button>
+          </div>
+        ` : (g.guideDone ? `<span style="font-size:12px; color:var(--accent);">● 가이드 제작 완료</span>` : '')}
+      </div>
+      <div style="flex:1; min-width:220px; max-width:360px;">
+        <textarea id="gameNoteInput" placeholder="게임 전체 메모 (선택)" ${editable?'':'readonly'}
+          style="width:100%; min-height:44px; padding:8px 10px; border:1px solid var(--line); border-radius:8px; font-size:12.5px; font-family:var(--sans); resize:vertical;"
+          onchange="updateGameNote(this.value)">${g.note||''}</textarea>
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="${currentMode==='photo'?'active':''}" onclick="switchMode('photo')">사진</button>
+      <button class="${currentMode==='table'?'active':''}" onclick="switchMode('table')">표</button>
+    </div>
+    <div id="tabBody"></div>
+  `;
+  if (currentMode === 'photo') renderPhotoTab(); else renderTableTab();
+  updatePresenceBanner_(lastPresenceOthers_);
+}
+
+async function toggleGuideDone(checked){
+  const g = games.find(x=>x.id===currentGameId);
+  g.guideDone = checked;
+  await updateDoc(doc(db, 'games', g.id), { guideDone: checked });
+}
+
+function updateGameNote(v){
+  const g = games.find(x=>x.id===currentGameId);
+  g.note = v; // 저장 버튼 누를 때 같이 반영됩니다.
+}
+
+function switchMode(m){
+  currentMode = m;
+  currentPhotoIdx = 0;
+  renderDetail();
+}
+
+// ---- 사진 탭 ----
+async function renderPhotoTab(){
+  const g = games.find(x=>x.id===currentGameId);
+  const editable = currentRole === 'editor';
+  const photos = g.photos || [];
+  const body = document.getElementById('tabBody');
+
+  const uploadRowHtml = editable ? `
+    <div class="upload-row">
+      <input type="file" id="photoFileInput" accept="image/*">
+      <button class="btn btn-primary2" style="width:auto;" onclick="uploadPhoto()">업로드</button>
+      <span id="uploadStatus" style="font-size:12px; color:var(--ink-soft);"></span>
+    </div>
+  ` : '';
+
+  if (!photos.length){
+    body.innerHTML = `${uploadRowHtml}<p>등록된 사진이 없습니다.${editable ? ' 위에서 업로드해주세요.' : ''}</p>`;
+    return;
+  }
+
+  if (currentPhotoIdx >= photos.length) currentPhotoIdx = 0;
+  const photo = photos[currentPhotoIdx];
+
+  body.innerHTML = `
+    ${uploadRowHtml}
+    <div class="photo-nav">
+      <button class="btn btn-ghost2" style="width:auto;" onclick="prevPhoto()" ${photos.length<2?'disabled':''}>◀</button>
+      <span style="font-size:12.5px; color:var(--ink-soft);">${currentPhotoIdx+1} / ${photos.length}</span>
+      <button class="btn btn-ghost2" style="width:auto;" onclick="nextPhoto()" ${photos.length<2?'disabled':''}>▶</button>
+      ${editable ? `<button class="btn btn-ghost2" style="width:auto; margin-left:auto;" onclick="deletePhoto()">사진 삭제</button>` : ''}
+    </div>
+    <div class="photo-stage" id="photoStage">
+      <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#999; font-size:12px;">불러오는 중...</div>
+    </div>
+    ${editable ? `<p style="margin-top:8px; font-size:11.5px;">사진의 빈 곳을 더블클릭하면 새 마커와 텍스트박스가 추가됩니다. 마커와 텍스트박스는 각각 드래그로 옮길 수 있고, 텍스트박스 안에서 케이스종류·구성품·수량을 바로 수정할 수 있습니다.</p>` : ''}
+  `;
+
+  const url = await resolvePhotoUrl_(photo.storagePath);
+  const stage = document.getElementById('photoStage');
+  if (!stage) return; // 그 사이 다른 사진으로 넘어갔으면 중단
+  stage.style.backgroundImage = `url('${url}')`;
+  stage.innerHTML = '<div class="line-layer" id="lineLayer"></div>';
+  drawMarkers(stage, photo, editable);
+  drawLabels(stage, photo, editable);
+
+  if (editable){
+    stage.ondblclick = (e)=>{
+      if (e.target !== stage) return;
+      const rect = stage.getBoundingClientRect();
+      const x = (e.clientX-rect.left)/rect.width*100;
+      const y = (e.clientY-rect.top)/rect.height*100;
+      const boxX = x < 60 ? Math.min(97, x+8) : Math.max(3, x-8);
+      const boxY = Math.max(5, Math.min(90, y-4));
+      g.cases = g.cases || [];
+      g.cases.push({ caseType:'A', items:[{name:'새 구성품', qty:1}] });
+      photo.markers = photo.markers || [];
+      photo.markers.push({ x, y, caseIdx: g.cases.length-1, box:{x:boxX, y:boxY} });
+      drawMarkers(stage, photo, editable);
+      drawLabels(stage, photo, editable);
+    };
+  }
+}
+
+function drawMarkers(stage, photo, editable){
+  const g = games.find(x=>x.id===currentGameId);
+  stage.querySelectorAll('.marker, .anno-box').forEach(el=>el.remove());
+  const lineLayer = stage.querySelector('#lineLayer');
+  if (lineLayer) lineLayer.innerHTML = '';
+
+  (photo.markers||[]).forEach((m, mi)=>{
+    const c = g.cases[m.caseIdx];
+
+    // ---- 마커(케이스 알파벳이 표시된 원) ----
+    const dot = document.createElement('div');
+    dot.className = 'marker' + (c ? ` case-${c.caseType}` : '');
+    dot.style.left = m.x+'%';
+    dot.style.top = m.y+'%';
+    dot.textContent = c ? c.caseType : '';
+    dot.title = `케이스 ${mi+1}`;
+    if (editable){
+      dot.addEventListener('pointerdown', (e)=>{
+        e.stopPropagation();
+        const move = (ev)=>{
+          const rect = stage.getBoundingClientRect();
+          m.x = Math.max(0, Math.min(100, (ev.clientX-rect.left)/rect.width*100));
+          m.y = Math.max(0, Math.min(100, (ev.clientY-rect.top)/rect.height*100));
+          dot.style.left = m.x+'%';
+          dot.style.top = m.y+'%';
+          drawConnLine_(stage, lineLayer, mi, dot, box);
+        };
+        const up = ()=>{ window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+      });
+    }
+    stage.appendChild(dot);
+
+    // ---- 텍스트박스(케이스 정보 패널) ----
+    let box = null;
+    if (!m.box || !c){ return; } // 구버전 마커(박스 없이 만들어진 것)는 패널 없이 점만 표시
+
+    box = document.createElement('div');
+    box.className = 'anno-box';
+    box.style.left = m.box.x+'%';
+    box.style.top = m.box.y+'%';
+
+    if (editable){
+      box.innerHTML = `
+        <div class="anno-head">
+          <select onchange="updateMarkerCaseType(${mi}, this.value)">${CASE_TYPES.map(t=>`<option value="${t}" ${t===c.caseType?'selected':''}>${t}</option>`).join('')}</select>
+          <button class="anno-del" title="이 마커/케이스 삭제" onclick="removeMarkerCase(${mi})">✕</button>
+        </div>
+        <div id="annoItems${mi}">
+          ${(c.items||[]).map((it, ii)=>`
+            <div class="anno-item">
+              <input type="text" value="${it.name||''}" placeholder="구성품명" onchange="updateMarkerItem(${mi},${ii},'name',this.value)">
+              <input type="number" value="${it.qty||0}" onchange="updateMarkerItem(${mi},${ii},'qty',this.value)">
+              <button onclick="deleteMarkerItem(${mi},${ii})">✕</button>
+            </div>
+          `).join('')}
+        </div>
+        <button class="anno-additem" onclick="addMarkerItem(${mi})">+ 항목 추가</button>
+        <input type="text" value="${c.note||''}" placeholder="비고 (선택)" style="width:100%; margin-top:6px; padding:4px 6px; font-size:11px; border:1px solid var(--line); border-radius:4px; box-sizing:border-box;"
+          onchange="updateCaseNote(${m.caseIdx}, this.value)">
+        <button class="anno-label-btn" onclick="createLabelFromMarker(${mi})">라벨 만들기</button>
+      `;
+      // 박스 자체를 드래그로 옮기기 (입력창/버튼 클릭은 제외)
+      box.addEventListener('pointerdown', (e)=>{
+        if (['INPUT','BUTTON','SELECT','OPTION'].includes(e.target.tagName)) return;
+        e.stopPropagation();
+        const move = (ev)=>{
+          const rect = stage.getBoundingClientRect();
+          m.box.x = Math.max(0, Math.min(100, (ev.clientX-rect.left)/rect.width*100));
+          m.box.y = Math.max(0, Math.min(100, (ev.clientY-rect.top)/rect.height*100));
+          box.style.left = m.box.x+'%';
+          box.style.top = m.box.y+'%';
+          drawConnLine_(stage, lineLayer, mi, dot, box);
+        };
+        const up = ()=>{ window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+      });
+    } else {
+      box.innerHTML = `
+        <div class="anno-head"><span class="case-badge case-${c.caseType}" style="font-size:11px; padding:2px 6px;">${c.caseType}</span></div>
+        ${(c.items||[]).map(it=>`<div style="margin-bottom:2px;">${it.name||''}${it.qty?` <span style="color:var(--ink-soft);">${it.qty}개</span>`:''}</div>`).join('')}
+        ${c.note ? `<div style="margin-top:4px; font-size:11px; color:var(--ink-soft); font-style:italic;">${c.note}</div>` : ''}
+      `;
+    }
+    stage.appendChild(box);
+
+    // ---- 마커 ↔ 텍스트박스 연결선 ----
+    // 둘 다 화면에 실제로 그려진 뒤, 두 요소를 똑같은 방식(getBoundingClientRect)으로
+    // 측정해서 선을 긋습니다. (한쪽은 저장된 값, 한쪽은 측정값을 섞어 쓰면 어긋날 수 있어서
+    // 반드시 같은 방식으로 통일합니다)
+    if (lineLayer) drawConnLine_(stage, lineLayer, mi, dot, box);
+  });
+}
+
+/**
+ * 마커(dot)와 텍스트박스(box) 두 DOM 요소의 실제 화면 위치를 측정해서, 그 사이를
+ * 잇는 점선을 순수 CSS(회전된 div)로 그립니다. (SVG 좌표계 관련 문제를 피하기 위해
+ * 일부러 SVG를 쓰지 않습니다)
+ */
+function drawConnLine_(stage, lineLayer, mi, dot, box){
+  if (!lineLayer || !dot || !box) return;
+  const stageRect = stage.getBoundingClientRect();
+  const dotRect = dot.getBoundingClientRect();
+  const boxRect = box.getBoundingClientRect();
+
+  const x1 = (dotRect.left + dotRect.width/2) - stageRect.left;
+  const y1 = (dotRect.top + dotRect.height/2) - stageRect.top;
+  const x2 = boxRect.left - stageRect.left; // 박스의 왼쪽 가장자리 중앙 (마커가 대체로 왼쪽에 있음)
+  const y2 = (boxRect.top + boxRect.height/2) - stageRect.top;
+
+  const dx = x2 - x1, dy = y2 - y1;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+  const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+
+  let line = lineLayer.querySelector(`#connLine${mi}`);
+  if (!line){
+    line = document.createElement('div');
+    line.className = 'conn-line';
+    line.id = `connLine${mi}`;
+    lineLayer.appendChild(line);
+  }
+  line.style.left = x1+'px';
+  line.style.top = y1+'px';
+  line.style.width = dist+'px';
+  line.style.transform = `rotate(${angle}deg)`;
+}
+
+/**
+ * 라벨을 드래그할 때 다른 라벨과 가장자리/중앙이 맞으면 빨간 점선으로 표시합니다.
+ * xPos/yPos가 null이면 해당 방향 가이드를 지웁니다.
+ */
+function renderAlignGuides_(stage, xPos, yPos){
+  let layer = stage.querySelector('#alignGuideLayer');
+  if (!layer){
+    layer = document.createElement('div');
+    layer.id = 'alignGuideLayer';
+    layer.style.cssText = 'position:absolute; inset:0; pointer-events:none; z-index:9;';
+    stage.appendChild(layer);
+  }
+  layer.innerHTML = '';
+  if (xPos != null){
+    const el = document.createElement('div');
+    el.className = 'align-guide';
+    el.style.cssText = `left:${xPos}px; top:0; bottom:0; width:1.5px;`;
+    layer.appendChild(el);
+  }
+  if (yPos != null){
+    const el = document.createElement('div');
+    el.className = 'align-guide';
+    el.style.cssText = `top:${yPos}px; left:0; right:0; height:1.5px;`;
+    layer.appendChild(el);
+  }
+}
+
+// ---- 텍스트박스 안 편집 동작들 ----
+function updateMarkerCaseType(mi, val){
+  const g = games.find(x=>x.id===currentGameId);
+  const photo = g.photos[currentPhotoIdx];
+  g.cases[photo.markers[mi].caseIdx].caseType = val;
+  redrawCurrentPhoto_();
+}
+function updateMarkerItem(mi, ii, field, val){
+  const g = games.find(x=>x.id===currentGameId);
+  const photo = g.photos[currentPhotoIdx];
+  g.cases[photo.markers[mi].caseIdx].items[ii][field] = field==='qty' ? Number(val) : val;
+}
+function addMarkerItem(mi){
+  const g = games.find(x=>x.id===currentGameId);
+  const photo = g.photos[currentPhotoIdx];
+  g.cases[photo.markers[mi].caseIdx].items.push({name:'', qty:1});
+  redrawCurrentPhoto_();
+}
+function deleteMarkerItem(mi, ii){
+  const g = games.find(x=>x.id===currentGameId);
+  const photo = g.photos[currentPhotoIdx];
+  const items = g.cases[photo.markers[mi].caseIdx].items;
+  items.splice(ii, 1);
+  if (items.length === 0) items.push({name:'', qty:1}); // 최소 한 줄은 유지 (완전히 비면 편집이 어려움)
+  redrawCurrentPhoto_();
+}
+function removeMarkerCase(mi){
+  if (!confirm('이 마커와 케이스를 삭제할까요?')) return;
+  const g = games.find(x=>x.id===currentGameId);
+  const photo = g.photos[currentPhotoIdx];
+  const caseIdx = photo.markers[mi].caseIdx;
+  photo.markers.splice(mi, 1);
+  g.cases.splice(caseIdx, 1);
+  // 뒤에 있던 케이스들의 인덱스가 하나씩 당겨지므로, 모든 사진의 마커 참조를 보정합니다.
+  g.photos.forEach(p=>{
+    (p.markers||[]).forEach(m=>{ if (m.caseIdx > caseIdx) m.caseIdx--; });
+  });
+  redrawCurrentPhoto_();
+}
+function redrawCurrentPhoto_(){
+  const g = games.find(x=>x.id===currentGameId);
+  const photo = g.photos[currentPhotoIdx];
+  const stage = document.getElementById('photoStage');
+  if (!stage) return;
+  const editable = currentRole==='editor';
+  drawMarkers(stage, photo, editable);
+  drawLabels(stage, photo, editable);
+}
+
+// ---- 라벨 (실제 라벨기 인쇄 미리보기: 검정 바탕 흰 글씨) ----
+function createLabelFromMarker(mi){
+  const g = games.find(x=>x.id===currentGameId);
+  const photo = g.photos[currentPhotoIdx];
+  const m = photo.markers[mi];
+  const c = g.cases[m.caseIdx];
+  const text = (c.items||[]).map(it => it.qty ? `${it.name} ${it.qty}개` : it.name).join('\n');
+  photo.labels = photo.labels || [];
+  const baseX = m.box ? m.box.x : m.x;
+  const baseY = m.box ? m.box.y : m.y;
+  photo.labels.push({ x: Math.min(94, baseX+6), y: Math.min(90, baseY+10), text, fontSize:14 });
+  redrawCurrentPhoto_();
+}
+
+function drawLabels(stage, photo, editable){
+  stage.querySelectorAll('.label-wrap').forEach(el=>el.remove());
+  labelRectsCache_ = [];
+  (photo.labels||[]).forEach((lbl, li)=>{
+    const rotation = lbl.rotation || 0;
+    const wrap = document.createElement('div');
+    wrap.className = 'label-wrap';
+    wrap.style.left = lbl.x+'%';
+    wrap.style.top = lbl.y+'%';
+
+    const rotateGroup = document.createElement('div');
+    rotateGroup.className = 'label-rotate-group';
+    rotateGroup.style.transform = `rotate(${rotation}deg)`;
+
+    const labelEl = document.createElement('div');
+    labelEl.className = 'photo-label';
+    labelEl.style.fontSize = (lbl.fontSize||14)+'px';
+    if (lbl.widthPct != null && lbl.heightPct != null){
+      const stageRect = stage.getBoundingClientRect();
+      labelEl.style.width = (stageRect.width * lbl.widthPct/100)+'px';
+      labelEl.style.height = (stageRect.height * lbl.heightPct/100)+'px';
+      labelEl.style.overflow = 'hidden';
+    }
+    labelEl.textContent = lbl.text;
+
+    rotateGroup.appendChild(labelEl);
+    wrap.appendChild(rotateGroup);
+    stage.appendChild(wrap); // 실제 위치/크기를 측정하려면 먼저 화면(DOM)에 붙어있어야 함
+
+    // 정렬 가이드용: 이 라벨의 실제 화면 위치를 저장해둡니다.
+    {
+      const stageRectNow = stage.getBoundingClientRect();
+      const groupRectNow = rotateGroup.getBoundingClientRect();
+      labelRectsCache_[li] = {
+        left: groupRectNow.left - stageRectNow.left,
+        top: groupRectNow.top - stageRectNow.top,
+        right: groupRectNow.right - stageRectNow.left,
+        bottom: groupRectNow.bottom - stageRectNow.top,
+        centerX: (groupRectNow.left + groupRectNow.right)/2 - stageRectNow.left,
+        centerY: (groupRectNow.top + groupRectNow.bottom)/2 - stageRectNow.top
+      };
+    }
+
+    if (editable){
+      labelEl.contentEditable = 'true';
+      labelEl.addEventListener('blur', ()=>{ lbl.text = labelEl.innerText; });
+
+      // 회전 후 실제 화면에 보이는 라벨의 테두리를 측정해서, 툴바는 왼쪽 위
+      // 모서리 바로 위, 손잡이는 오른쪽 아래 모서리에 맞춰 배치합니다.
+      const wrapRect = wrap.getBoundingClientRect();
+      const groupRect = rotateGroup.getBoundingClientRect();
+      const relLeft = groupRect.left - wrapRect.left;
+      const relTop = groupRect.top - wrapRect.top;
+      const relRight = groupRect.right - wrapRect.left;
+      const relBottom = groupRect.bottom - wrapRect.top;
+
+      const toolbar = document.createElement('div');
+      toolbar.className = 'label-toolbar';
+      toolbar.style.left = relLeft+'px';
+      toolbar.style.top = (relTop-28)+'px';
+      toolbar.innerHTML = `
+        <span class="label-drag">⠿</span>
+        <button onclick="changeLabelFontSize(${li},-1)">A-</button>
+        <button onclick="changeLabelFontSize(${li},1)">A+</button>
+        <button onclick="rotateLabel(${li})">⟳</button>
+        <button onclick="deleteLabel(${li})">✕</button>
+      `;
+      toolbar.querySelector('.label-drag').addEventListener('pointerdown', (e)=>{
+        e.stopPropagation();
+        // labelEl.offsetWidth/Height는 회전 영향을 안 받는 "원래(로컬)" 크기이고,
+        // getBoundingClientRect는 회전이 반영된 "화면에 보이는" 크기입니다.
+        // 90/270도 회전이면 이 둘이 서로 다르므로, 그 차이를 보정값으로 미리 구해둡니다.
+        const localW = labelEl.offsetWidth, localH = labelEl.offsetHeight;
+        const swapped = (rotation === 90 || rotation === 270);
+        const visualW = swapped ? localH : localW;
+        const visualH = swapped ? localW : localH;
+        const offsetXPx = (localW - visualW) / 2; // wrap 기준 위치 → 실제 화면 왼쪽위로 변환하는 보정값
+        const offsetYPx = (localH - visualH) / 2;
+
+        const move = (ev)=>{
+          const rect = stage.getBoundingClientRect();
+          let x = (ev.clientX-rect.left)/rect.width*100;
+          let y = (ev.clientY-rect.top)/rect.height*100;
+          x = Math.max(0, Math.min(100, x));
+          y = Math.max(0, Math.min(100, y));
+
+          // ---- 정렬 가이드: 다른 라벨과 가장자리/중앙이 가까우면 딱 맞춰서(스냅) 표시 ----
+          const SNAP_PX = 6;
+          const flowLeftPx = x/100*rect.width, flowTopPx = y/100*rect.height;
+          const curLeft = flowLeftPx + offsetXPx, curTop = flowTopPx + offsetYPx; // 실제 화면상 위치로 보정
+          const curRight = curLeft + visualW, curBottom = curTop + visualH;
+          const curCenterX = curLeft + visualW/2, curCenterY = curTop + visualH/2;
+
+          let bestX = null, bestY = null;
+          labelRectsCache_.forEach((r, idx)=>{
+            if (!r || idx === li) return;
+            [[curLeft, r.left, 0], [curRight, r.right, -visualW], [curCenterX, r.centerX, -visualW/2]].forEach(([cur, target, adj])=>{
+              const diff = Math.abs(cur - target);
+              if (diff < SNAP_PX && (!bestX || diff < bestX.diff)) bestX = { diff, snap: target+adj, guidePos: target };
+            });
+            [[curTop, r.top, 0], [curBottom, r.bottom, -visualH], [curCenterY, r.centerY, -visualH/2]].forEach(([cur, target, adj])=>{
+              const diff = Math.abs(cur - target);
+              if (diff < SNAP_PX && (!bestY || diff < bestY.diff)) bestY = { diff, snap: target+adj, guidePos: target };
+            });
+          });
+          // 스냅된 "화면상 위치"를 다시 wrap의 flow 위치(%)로 역산해서 반영합니다.
+          if (bestX) x = ((bestX.snap - offsetXPx) / rect.width) * 100;
+          if (bestY) y = ((bestY.snap - offsetYPx) / rect.height) * 100;
+
+          lbl.x = x; lbl.y = y;
+          wrap.style.left = x+'%';
+          wrap.style.top = y+'%';
+          renderAlignGuides_(stage, bestX ? bestX.guidePos : null, bestY ? bestY.guidePos : null);
+        };
+        const up = ()=>{
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', up);
+          renderAlignGuides_(stage, null, null);
+        };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+      });
+      wrap.appendChild(toolbar);
+
+      // 크기 조절 손잡이 - 회전과 무관하게 항상 화면상 오른쪽 아래 모서리에 고정합니다.
+      const resizeHandle = document.createElement('div');
+      resizeHandle.className = 'label-resize';
+      resizeHandle.style.left = (relRight-6)+'px';
+      resizeHandle.style.top = (relBottom-6)+'px';
+      resizeHandle.addEventListener('pointerdown', (e)=>{
+        e.stopPropagation();
+        const stageRect = stage.getBoundingClientRect();
+        const startW = labelEl.getBoundingClientRect().width;
+        const startH = labelEl.getBoundingClientRect().height;
+        const startX = e.clientX, startY = e.clientY;
+        const swapped = (rotation === 90 || rotation === 270);
+        const move = (ev)=>{
+          // 화면에 보이는(회전 후) 크기 기준으로 계산 → 회전돼도 항상 오른쪽 아래를 드래그하는 느낌
+          const visualW = Math.max(20, startW + (ev.clientX-startX));
+          const visualH = Math.max(16, startH + (ev.clientY-startY));
+          const localW = swapped ? visualH : visualW;
+          const localH = swapped ? visualW : visualH;
+          lbl.widthPct = localW/stageRect.width*100;
+          lbl.heightPct = localH/stageRect.height*100;
+          labelEl.style.width = localW+'px';
+          labelEl.style.height = localH+'px';
+          labelEl.style.overflow = 'hidden';
+        };
+        const up = ()=>{ window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); redrawCurrentPhoto_(); };
+        window.addEventListener('pointermove', move);
+        window.addEventListener('pointerup', up);
+      });
+      wrap.appendChild(resizeHandle);
+    }
+  });
+}
+
+function changeLabelFontSize(li, delta){
+  const g = games.find(x=>x.id===currentGameId);
+  const photo = g.photos[currentPhotoIdx];
+  const lbl = photo.labels[li];
+  lbl.fontSize = Math.max(8, Math.min(48, (lbl.fontSize||14) + delta*2));
+  redrawCurrentPhoto_();
+}
+function rotateLabel(li){
+  const g = games.find(x=>x.id===currentGameId);
+  const photo = g.photos[currentPhotoIdx];
+  const lbl = photo.labels[li];
+  lbl.rotation = ((lbl.rotation||0) + 90) % 360;
+  redrawCurrentPhoto_();
+}
+function deleteLabel(li){
+  const g = games.find(x=>x.id===currentGameId);
+  const photo = g.photos[currentPhotoIdx];
+  photo.labels.splice(li, 1);
+  redrawCurrentPhoto_();
+}
+
+async function resolvePhotoUrl_(storagePath){
+  if (photoUrlCache[storagePath]) return photoUrlCache[storagePath];
+  const url = await getDownloadURL(ref(storage, storagePath));
+  photoUrlCache[storagePath] = url;
+  return url;
+}
+
+function prevPhoto(){ currentPhotoIdx = Math.max(0, currentPhotoIdx-1); renderPhotoTab(); }
+function nextPhoto(){
+  const g = games.find(x=>x.id===currentGameId);
+  currentPhotoIdx = Math.min((g.photos||[]).length-1, currentPhotoIdx+1);
+  renderPhotoTab();
+}
+
+function uploadPhoto(){
+  const input = document.getElementById('photoFileInput');
+  const file = input.files[0];
+  if (!file){ alert('파일을 선택해주세요.'); return; }
+  openCropModal_(file);
+}
+
+/**
+ * ============================================================
+ * 사진 자르기 · 회전 (업로드 전 편집)
+ * ============================================================
+ */
+let cropState_ = null;
+
+function openCropModal_(file){
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = ()=>{
+    cropState_ = { originalImg: img, img, rotation: 0, fileName: file.name };
+    renderCropModal_();
+  };
+  img.src = url;
+}
+
+function renderCropModal_(){
+  const old = document.getElementById('cropBackdrop');
+  if (old) old.remove();
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.id = 'cropBackdrop';
+  backdrop.innerHTML = `
+    <div class="modal">
+      <h3>사진 자르기 · 회전</h3>
+      <div class="crop-toolbar">
+        <button onclick="rotateCrop_(-90)">↺ 왼쪽으로 회전</button>
+        <button onclick="rotateCrop_(90)">회전 ↻ 오른쪽으로</button>
+      </div>
+      <div class="crop-canvas-wrap" id="cropCanvasWrap">
+        <canvas id="cropCanvas"></canvas>
+        <div class="crop-box" id="cropBox"><div class="crop-handle" id="cropHandle"></div></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeCropModal_()">취소</button>
+        <button class="btn-apply" onclick="applyCropAndUpload_()">적용하고 업로드</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(backdrop);
+  setupCropCanvas_();
+}
+
+function setupCropCanvas_(){
+  const wrap = document.getElementById('cropCanvasWrap');
+  const canvas = document.getElementById('cropCanvas');
+  const box = document.getElementById('cropBox');
+  const handle = document.getElementById('cropHandle');
+
+  const img = cropState_.img;
+  const ctx = canvas.getContext('2d');
+  canvas.width = img.width;
+  canvas.height = img.height;
+  ctx.drawImage(img, 0, 0);
+
+  // 사진 원래 비율 그대로 미리보기 높이를 맞춥니다. (고정된 4:3 틀에 늘려 넣으면
+  // 미리보기가 눌리거나 늘어나 보이고, 그 상태로 계산한 크롭 좌표도 같이 어긋납니다)
+  const wrapWidth = wrap.clientWidth;
+  wrap.style.height = (wrapWidth * img.height / img.width) + 'px';
+
+  // 처음에는 크롭 박스가 전체 이미지를 덮도록 초기화
+  const rect = wrap.getBoundingClientRect();
+  cropState_.box = { x: 0, y: 0, w: rect.width, h: rect.height };
+  applyBoxStyle_();
+
+  box.onpointerdown = (e)=>{
+    if (e.target === handle) return;
+    const startX = e.clientX, startY = e.clientY;
+    const start = { ...cropState_.box };
+    const move = (ev)=>{
+      const wrapRect = wrap.getBoundingClientRect();
+      let x = start.x + (ev.clientX - startX);
+      let y = start.y + (ev.clientY - startY);
+      x = Math.max(0, Math.min(wrapRect.width - cropState_.box.w, x));
+      y = Math.max(0, Math.min(wrapRect.height - cropState_.box.h, y));
+      cropState_.box.x = x; cropState_.box.y = y;
+      applyBoxStyle_();
+    };
+    const up = ()=>{ window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  handle.onpointerdown = (e)=>{
+    e.stopPropagation();
+    const startX = e.clientX, startY = e.clientY;
+    const start = { ...cropState_.box };
+    const move = (ev)=>{
+      const wrapRect = wrap.getBoundingClientRect();
+      let w = Math.max(30, Math.min(wrapRect.width - start.x, start.w + (ev.clientX - startX)));
+      let h = Math.max(30, Math.min(wrapRect.height - start.y, start.h + (ev.clientY - startY)));
+      cropState_.box.w = w; cropState_.box.h = h;
+      applyBoxStyle_();
+    };
+    const up = ()=>{ window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+}
+
+function applyBoxStyle_(){
+  const box = document.getElementById('cropBox');
+  const { x, y, w, h } = cropState_.box;
+  box.style.left = x+'px'; box.style.top = y+'px';
+  box.style.width = w+'px'; box.style.height = h+'px';
+}
+
+function rotateCrop_(deltaDeg){
+  const { originalImg } = cropState_;
+  cropState_.rotation = ((cropState_.rotation || 0) + deltaDeg + 360) % 360;
+  const rot = cropState_.rotation;
+  const swapped = (rot === 90 || rot === 270);
+
+  const rotatedCanvas = document.createElement('canvas');
+  rotatedCanvas.width = swapped ? originalImg.height : originalImg.width;
+  rotatedCanvas.height = swapped ? originalImg.width : originalImg.height;
+  const rctx = rotatedCanvas.getContext('2d');
+  rctx.save();
+  rctx.translate(rotatedCanvas.width/2, rotatedCanvas.height/2);
+  rctx.rotate(rot * Math.PI/180);
+  rctx.drawImage(originalImg, -originalImg.width/2, -originalImg.height/2);
+  rctx.restore();
+
+  cropState_.img = rotatedCanvas;
+  setupCropCanvas_(); // 회전된 이미지 기준으로 캔버스와 크롭 박스를 다시 초기화
+}
+
+function closeCropModal_(){
+  const el = document.getElementById('cropBackdrop');
+  if (el) el.remove();
+  cropState_ = null;
+}
+
+async function applyCropAndUpload_(){
+  const wrap = document.getElementById('cropCanvasWrap');
+  const wrapRect = wrap.getBoundingClientRect();
+  const img = cropState_.img; // 캔버스(회전됐으면) 또는 이미지(회전 안 했으면) - 둘 다 drawImage 가능
+  const scale = img.width / wrapRect.width; // 화면 표시 크기 → 실제 이미지 픽셀 크기 비율
+
+  const { x, y, w, h } = cropState_.box;
+  const sx = x*scale, sy = y*scale, sw = w*scale, sh = h*scale;
+
+  const outCanvas = document.createElement('canvas');
+  outCanvas.width = sw; outCanvas.height = sh;
+  outCanvas.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+
+  const blob = await new Promise(res => outCanvas.toBlob(res, 'image/jpeg', 0.9));
+  closeCropModal_();
+
+  const statusEl = document.getElementById('uploadStatus');
+  if (statusEl) statusEl.textContent = '업로드 중...';
+
+  const g = games.find(x=>x.id===currentGameId);
+  const storagePath = `games/${g.id}/${Date.now()}_cropped.jpg`;
+  try{
+    await uploadBytes(ref(storage, storagePath), blob);
+    g.photos = g.photos || [];
+    g.photos.push({ storagePath, markers: [] });
+    currentPhotoIdx = g.photos.length - 1;
+    await persistGame_(g);
+    renderPhotoTab();
+  }catch(e){
+    console.error(e);
+    alert('업로드에 실패했습니다.');
+  }
+}
+
+async function deletePhoto(){
+  if (!confirm('이 사진을 삭제할까요? (마커 정보도 함께 삭제됩니다)')) return;
+  const g = games.find(x=>x.id===currentGameId);
+  g.photos.splice(currentPhotoIdx, 1);
+  currentPhotoIdx = 0;
+  await persistGame_(g);
+  renderPhotoTab();
+}
+
+/**
+ * 사진/마커 변경사항은 즉시 저장합니다 (표 탭의 케이스 편집은 "저장" 버튼으로 별도 처리).
+ * 저장할 때마다:
+ *  1) 서버의 현재 버전이 내가 마지막으로 불러온 버전과 다르면(그 사이 다른 편집자가
+ *     먼저 저장했다면) 충돌로 보고 덮어쓰지 않고 최신 내용을 다시 불러옵니다.
+ *  2) 충돌이 없으면, 덮어쓰기 직전의 내용을 이력에 남깁니다 (너무 자주 남기지
+ *     않도록 게임당 3분에 한 번으로 제한합니다).
+ * 이 모든 걸 하나의 트랜잭션으로 처리해서 원자적으로(중간에 끼어들 틈 없이) 실행합니다.
+ */
+let historyLastSavedAt_ = {}; // gameId -> 마지막으로 이력을 남긴 시각 (너무 잦은 이력 생성 방지)
+
+async function persistGame_(g){
+  const gameRef = doc(db, 'games', g.id);
+  const basedOnUpdatedAt = g.updatedAt;
+
+  try{
+    const result = await runTransaction(db, async (tx)=>{
+      const snap = await tx.get(gameRef);
+      const serverData = snap.data();
+
+      if (serverData && serverData.updatedAt && basedOnUpdatedAt && serverData.updatedAt !== basedOnUpdatedAt){
+        return { conflict:true, serverGame: { id: g.id, ...serverData } };
+      }
+
+      if (serverData){
+        const lastHistoryAt = historyLastSavedAt_[g.id] || 0;
+        if (Date.now() - lastHistoryAt > 3*60*1000){
+          // 편집 잠금 정보(editLockHolder/editLockAt)는 "지금 누가 편집 중인지"를 나타내는
+          // 실시간 상태일 뿐, 게임 내용이 아니므로 이력에는 남기지 않습니다.
+          // (안 그러면 나중에 이 버전을 복원할 때 그 당시의 잠금 상태까지 같이 되살아나서 꼬입니다)
+          const { editLockHolder, editLockAt, ...contentOnly } = serverData;
+          const historyRef = doc(collection(db, 'games', g.id, 'history'));
+          tx.set(historyRef, { savedAt: Date.now(), snapshot: contentOnly });
+          historyLastSavedAt_[g.id] = Date.now();
+        }
+      }
+
+      const { id, editLockHolder, editLockAt, ...data } = g;
+      data.updatedAt = Date.now();
+      // merge:true로 저장해서, 이 문서에 있는 편집 잠금 필드(editLockHolder/editLockAt)는
+      // 절대 건드리지 않습니다. (내용 저장과 잠금 상태는 완전히 분리되어야 함)
+      tx.set(gameRef, data, { merge: true });
+      return { conflict:false, newUpdatedAt: data.updatedAt };
+    });
+
+    if (result.conflict){
+      const idx = games.findIndex(x=>x.id===g.id);
+      if (idx !== -1) games[idx] = result.serverGame;
+      if (currentGameId === g.id) renderDetail();
+      alert('⚠ 다른 편집자가 방금 이 게임을 수정해서, 최신 내용을 다시 불러왔습니다.\n방금 편집하신 내용은 다시 적용해주세요.');
+      return false;
+    }
+
+    g.updatedAt = result.newUpdatedAt; // 다음 저장 때 "나 자신"을 충돌로 오판하지 않도록 갱신
+    return true;
+  }catch(e){
+    console.error('저장 실패', e);
+    alert('저장에 실패했습니다. 잠시 후 다시 시도해주세요.');
+    return false;
+  }
+}
+
+/**
+ * ============================================================
+ * 이전 버전(수정 이력) 보기·복원
+ * ============================================================
+ */
+async function showHistoryModal_(){
+  const gameId = currentGameId;
+  const q = query(collection(db, 'games', gameId, 'history'), orderBy('savedAt', 'desc'), limit(5));
+  const snap = await getDocs(q);
+  const items = [];
+  snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+  renderHistoryModal_(gameId, items);
+}
+
+function formatHistoryDate_(ts){
+  const d = new Date(ts);
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}.${pad(d.getMonth()+1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function renderHistoryModal_(gameId, items){
+  const old = document.getElementById('historyBackdrop');
+  if (old) old.remove();
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+  backdrop.id = 'historyBackdrop';
+  backdrop.innerHTML = `
+    <div class="modal" style="max-width:420px;">
+      <h3>이전 버전</h3>
+      <p style="font-size:12px; color:var(--ink-soft); margin-top:-8px;">저장할 때마다 직전 내용이 최근 5개까지 자동으로 남습니다.</p>
+      ${items.length ? items.map(h=>`
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line);">
+          <div>
+            <div style="font-family:var(--mono); font-size:12.5px; font-weight:700;">${formatHistoryDate_(h.savedAt)}</div>
+            <div style="font-size:12px; color:var(--ink-soft);">${h.snapshot.name} · 케이스 ${(h.snapshot.cases||[]).length}개</div>
+          </div>
+          <div style="display:flex; gap:6px;">
+            <button class="btn btn-ghost2" style="width:auto; padding:5px 10px; font-size:12px;" onclick="restoreHistory_('${gameId}','${h.id}')">복원</button>
+          </div>
+        </div>
+      `).join('') : `<p>아직 저장된 이전 버전이 없습니다.</p>`}
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="document.getElementById('historyBackdrop').remove()">닫기</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(backdrop);
+}
+
+async function restoreHistory_(gameId, historyId){
+  if (!confirm('이 버전으로 되돌릴까요? 현재 내용은 이력에 저장된 뒤 덮어써집니다.')) return;
+  const snap = await getDoc(doc(db, 'games', gameId, 'history', historyId));
+  const item = snap.data();
+  if (!item){ alert('불러오지 못했습니다.'); return; }
+
+  // 혹시 예전에 만들어진 이력에 편집 잠금 정보가 남아있더라도(수정 전 버전), 복원 시
+  // 절대 반영하지 않도록 한 번 더 걸러냅니다.
+  const { editLockHolder, editLockAt, ...contentOnly } = item.snapshot;
+  const g = { id: gameId, ...contentOnly, updatedAt: games.find(x=>x.id===gameId)?.updatedAt };
+  const ok = await persistGame_(g);
+  if (ok){
+    const idx = games.findIndex(x=>x.id===gameId);
+    if (idx !== -1) games[idx] = g;
+    document.getElementById('historyBackdrop')?.remove();
+    if (currentGameId === gameId) renderDetail();
+    alert('복원되었습니다.');
+  }
+}
+
+/**
+ * ============================================================
+ * 접속 알림 + 동시편집 잠금 (Firestore 실시간 리스너 사용)
+ * ============================================================
+ * Apps Script 때는 45초마다 서버에 "혹시 새 소식 있어요?" 하고 직접 물어보는
+ * 방식(폴링)이었는데, Firestore는 onSnapshot으로 변화가 생기는 즉시 알 수 있어서
+ * 훨씬 자연스럽고 빠릅니다.
+ */
+let presenceHeartbeatInterval_ = null;
+let presenceUnsub_ = null;
+let lockUnsub_ = null;
+let lastPresenceOthers_ = [];
+let holdsEditLock_ = false;
+const PRESENCE_STALE_MS = 90000; // 90초 이상 신호가 없으면 "나갔다"고 취급
+
+function sanitizeForDocId_(s){ return s.replace(/[^a-zA-Z0-9]/g, '_'); }
+
+/** 편집을 시작하기 전에 호출합니다. 다른 편집자가 이미 편집 중이면 물어보고 넘겨받습니다. */
+async function ensureEditLockForGame_(gameId){
+  const email = auth.currentUser.email.toLowerCase();
+  const gameRef = doc(db, 'games', gameId);
+
+  const attempt = async (force)=>{
+    return await runTransaction(db, async (tx)=>{
+      const snap = await tx.get(gameRef);
+      const data = snap.data() || {};
+      const now = Date.now();
+      const holderActive = data.editLockHolder && data.editLockHolder !== email && (now - (data.editLockAt||0)) < PRESENCE_STALE_MS;
+      if (holderActive && !force){
+        return { granted:false, holder: data.editLockHolder };
+      }
+      tx.update(gameRef, { editLockHolder: email, editLockAt: now });
+      return { granted:true };
+    });
+  };
+
+  const result = await attempt(false);
+  if (result.granted){ holdsEditLock_ = true; return true; }
+
+  const wantsToTake = confirm(`${result.holder}님이 현재 이 게임을 편집 중입니다.\n지금 편집하시겠습니까? (편집을 시작하면 ${result.holder}님은 뷰어로 전환됩니다)`);
+  if (!wantsToTake) return false;
+
+  const forced = await attempt(true);
+  holdsEditLock_ = !!forced.granted;
+  return holdsEditLock_;
+}
+
+/** 게임을 여는 동안 접속 신호를 계속 보내고, 다른 사람 접속/잠금 상태를 실시간으로 감시합니다. */
+let lastPresenceRawData_ = []; // 정제 전 원본 접속 기록 (주기적 재평가용)
+let presenceStaleCheckInterval_ = null;
+let currentPresenceGameId_ = null;
+
+function enterPresence_(gameId){
+  const email = auth.currentUser.email.toLowerCase();
+  currentPresenceGameId_ = gameId;
+  const presenceRef = doc(db, 'games', gameId, 'presence', sanitizeForDocId_(email));
+
+  const writePresence = ()=> setDoc(presenceRef, { email, lastSeen: Date.now() }).catch(()=>{});
+  writePresence();
+  presenceHeartbeatInterval_ = setInterval(writePresence, 30000);
+
+  // 다른 편집자가 지금 같이 보고 있는지 실시간 감시
+  presenceUnsub_ = onSnapshot(collection(db, 'games', gameId, 'presence'), (snap)=>{
+    lastPresenceRawData_ = [];
+    snap.forEach(d=> lastPresenceRawData_.push(d.data()));
+    refreshPresenceBanner_(email);
+  });
+
+  // 데이터가 안 바뀌어도(예: 나간 사람이 접속 기록을 못 지우고 탭을 닫은 경우)
+  // 시간이 지나면 유효기간이 끝나는지 주기적으로 다시 확인합니다.
+  presenceStaleCheckInterval_ = setInterval(()=> refreshPresenceBanner_(email), 20000);
+
+  // 내가 다른 편집자에게 밀려나서 잠금을 잃었는지 실시간 감시 (즉시 알림)
+  lockUnsub_ = onSnapshot(doc(db, 'games', gameId), (snap)=>{
+    const data = snap.data();
+    if (holdsEditLock_ && data && data.editLockHolder && data.editLockHolder !== email){
+      holdsEditLock_ = false;
+      currentRole = 'viewer';
+      updateRoleToggleUI_();
+      renderDetail();
+      alert(`${data.editLockHolder}님이 이 게임의 편집을 시작해서 뷰어로 전환되었습니다.`);
+    }
+  });
+}
+
+function refreshPresenceBanner_(myEmail){
+  const now = Date.now();
+  const others = lastPresenceRawData_
+    .filter(d => d.email !== myEmail && (now - d.lastSeen) < PRESENCE_STALE_MS)
+    .map(d => d.email);
+  lastPresenceOthers_ = others;
+  updatePresenceBanner_(others);
+}
+
+function leavePresence_(){
+  if (presenceHeartbeatInterval_) clearInterval(presenceHeartbeatInterval_);
+  if (presenceStaleCheckInterval_) clearInterval(presenceStaleCheckInterval_);
+  if (presenceUnsub_) presenceUnsub_();
+  if (lockUnsub_) lockUnsub_();
+  presenceHeartbeatInterval_ = null; presenceStaleCheckInterval_ = null;
+  presenceUnsub_ = null; lockUnsub_ = null;
+  holdsEditLock_ = false;
+  lastPresenceOthers_ = [];
+  lastPresenceRawData_ = [];
+
+  // 내 접속 기록을 바로 지워서, 다른 사람 화면에서도 곧바로 사라지게 합니다.
+  // (지우지 않으면 시간이 지나기 전까지는 "아직 보고 있다"고 계속 남아있게 됩니다)
+  if (currentPresenceGameId_ && auth.currentUser){
+    const email = auth.currentUser.email.toLowerCase();
+    deleteDoc(doc(db, 'games', currentPresenceGameId_, 'presence', sanitizeForDocId_(email))).catch(()=>{});
+    currentPresenceGameId_ = null;
+  }
+}
+
+function updatePresenceBanner_(otherEmails){
+  const slot = document.getElementById('presenceBannerSlot');
+  if (!slot) return;
+  if (!otherEmails || !otherEmails.length){ slot.innerHTML = ''; return; }
+  slot.innerHTML = `<div class="presence-banner">⚠ 이 게임을 지금 같이 보고 있는 편집자가 있습니다 (${otherEmails.length}명). 저장이 겹치지 않도록 서로 확인 후 작업해주세요.</div>`;
+}
+
+// ---- 표 탭 ----
+function renderTableTab(){
+  const g = games.find(x=>x.id===currentGameId);
+  const editable = currentRole === 'editor';
+  const cases = g.cases || [];
+  const body = document.getElementById('tabBody');
+
+  let rows = '';
+  cases.forEach((c, ci) => {
+    (c.items||[{name:'',qty:1}]).forEach((it, ii) => {
+      rows += `<tr>`;
+      if (ii === 0){
+        rows += `<td rowspan="${(c.items||[{}]).length}">
+          ${editable
+            ? `<select onchange="updateCaseType(${ci}, this.value)">${CASE_TYPES.map(t=>`<option value="${t}" ${t===c.caseType?'selected':''}>${t}</option>`).join('')}</select>`
+            : `<span class="case-badge case-${c.caseType}">${c.caseType}</span>`}
+        </td>`;
+      }
+      rows += `<td>${editable ? `<input value="${it.name||''}" onchange="updateItem(${ci},${ii},'name',this.value)">` : (it.name||'')}</td>`;
+      rows += `<td style="width:80px;">${editable ? `<input type="number" value="${it.qty||0}" onchange="updateItem(${ci},${ii},'qty',this.value)">` : (it.qty||0)}</td>`;
+      if (ii === 0){
+        rows += `<td rowspan="${(c.items||[{}]).length}">
+          ${editable ? `<input value="${c.note||''}" placeholder="비고" onchange="updateCaseNote(${ci}, this.value)">` : (c.note||'')}
+        </td>`;
+      }
+      if (editable) rows += `<td style="width:40px;"><button class="btn btn-ghost2" style="padding:4px 8px; width:auto;" onclick="deleteItem(${ci},${ii})">✕</button></td>`;
+      rows += `</tr>`;
+    });
+  });
+
+  body.innerHTML = `
+    <table class="case-table">
+      <thead><tr><th>케이스</th><th>구성품</th><th>수량</th><th>비고</th>${editable?'<th></th>':''}</tr></thead>
+      <tbody>${rows || `<tr><td colspan="5" style="color:var(--ink-soft);">등록된 케이스가 없습니다.</td></tr>`}</tbody>
+    </table>
+    ${editable ? `
+      <div style="margin-top:14px;">
+        <button class="btn btn-ghost2" style="width:auto;" onclick="addCase()">+ 케이스 추가</button>
+      </div>
+    ` : ''}
+  `;
+}
+
+function addCase(){
+  const g = games.find(x=>x.id===currentGameId);
+  g.cases = g.cases || [];
+  g.cases.push({ caseType:'A', items:[{name:'새 구성품', qty:1}] });
+  renderTableTab();
+}
+function updateCaseType(ci, val){
+  const g = games.find(x=>x.id===currentGameId);
+  g.cases[ci].caseType = val;
+}
+function updateCaseNote(ci, val){
+  const g = games.find(x=>x.id===currentGameId);
+  g.cases[ci].note = val;
+}
+function updateItem(ci, ii, field, val){
+  const g = games.find(x=>x.id===currentGameId);
+  g.cases[ci].items[ii][field] = field === 'qty' ? Number(val) : val;
+}
+function deleteItem(ci, ii){
+  const g = games.find(x=>x.id===currentGameId);
+  g.cases[ci].items.splice(ii, 1);
+  if (g.cases[ci].items.length === 0) g.cases.splice(ci, 1);
+  renderTableTab();
+}
+
+async function saveGame(){
+  const g = games.find(x=>x.id===currentGameId);
+  // 사진 탭에서 마커를 옮겼을 수도 있으니, 표 저장 시에도 전체를 같이 저장합니다.
+  const ok = await persistGame_(g);
+  if (ok) alert('저장되었습니다.');
+}
+
+// 전역에 노출 (onclick에서 호출하기 위함 - type="module"은 기본적으로 전역 스코프가 아니라서 필요)
+Object.assign(window, {
+  renderList, openGame, createNewGame, switchMode, setRole,
+  prevPhoto, nextPhoto, uploadPhoto, deletePhoto,
+  addCase, updateCaseType, updateCaseNote, updateItem, deleteItem, saveGame, doLogout,
+  updateMarkerCaseType, updateMarkerItem, addMarkerItem, deleteMarkerItem, removeMarkerCase,
+  createLabelFromMarker, changeLabelFontSize, rotateLabel, deleteLabel,
+  rotateCrop_, closeCropModal_, applyCropAndUpload_,
+  showHistoryModal_, restoreHistory_,
+  toggleWorkComplete, deleteGame,
+  toggleGuideDone, updateGameNote,
+  openDashboard, closeDashboard, setDashboardFilter, toggleGuideDoneFor,
+  openAccessManagement, approveRequest, rejectRequest, addDirectAccess, removeAccess, addStore, removeStore,
+  openMigrationTool, startMigration_,
+  openPurchaseGuide, togglePurchaseGameSelect, selectAllTop50Games, deselectAllPurchaseGames
+});
+
+// ============================================================
+// 로그인 상태 감시
+// ============================================================
+onAuthStateChanged(auth, (user)=>{
+  if (user) checkAccessAndRender(user);
+  else renderLoginButton();
+});
+</script>
+</body>
+</html>
