@@ -2301,8 +2301,9 @@ async function renderPhotoToCanvas_(g, photo, refWidth){
   });
 
   // ---- 라벨(실제 인쇄 미리보기) ----
+  // lbl.x/lbl.y는 회전 전 라벨의 "왼쪽 위 모서리" 위치이고, 회전은 그 라벨 자신의 중심을
+  // 기준으로 일어납니다 (화면의 CSS와 동일한 동작). 그래서 중심 좌표는 위치 + 크기의 절반으로 구합니다.
   (photo.labels||[]).forEach(lbl=>{
-    const x = (lbl.x/100)*canvas.width, y = (lbl.y/100)*canvas.height;
     const fontSize = (lbl.fontSize||14)*k;
     ctx.font = `600 ${fontSize}px sans-serif`;
     const linesRaw = String(lbl.text||'').split('\n');
@@ -2316,8 +2317,10 @@ async function renderPhotoToCanvas_(g, photo, refWidth){
       w = maxLineW + padX*2;
       h = linesRaw.length*fontSize*1.35 + padY*2;
     }
+    const left = (lbl.x/100)*canvas.width, top = (lbl.y/100)*canvas.height;
+    const pivotX = left + w/2, pivotY = top + h/2;
     ctx.save();
-    ctx.translate(x, y);
+    ctx.translate(pivotX, pivotY);
     ctx.rotate((lbl.rotation||0) * Math.PI/180);
     roundRectPath_(ctx, -w/2, -h/2, w, h, 0.25*fontSize);
     ctx.fillStyle = '#000';
