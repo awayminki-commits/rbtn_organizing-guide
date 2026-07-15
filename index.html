@@ -1605,7 +1605,7 @@ function renderGameListResults_(){
         <div class="meta">케이스 ${(g.cases||[]).length}개${g.guideDone ? '' : ' · 가이드 준비중'}</div>
       </div>
       <label style="display:flex; align-items:center; gap:5px; margin-top:8px; font-size:11.5px; color:var(--ink-soft); cursor:pointer;">
-        <input type="checkbox" ${done?'checked':''} onclick="event.stopPropagation(); toggleWorkComplete('${g.id}', this.checked)"> 작업 완료
+        <input type="checkbox" ${done?'checked':''} onclick="event.stopPropagation(); toggleWorkComplete('${g.id}', this.checked, this)"> 작업 완료
       </label>
       ${editable ? `<button onclick="event.stopPropagation(); deleteGame('${g.id}')" style="position:absolute; top:12px; right:12px; border:none; background:none; color:var(--ink-soft); cursor:pointer; font-size:13px;">✕</button>` : ''}
     </div>
@@ -1647,15 +1647,27 @@ function renderListSelectionSummary_(){
   </div>`;
 }
 
-async function toggleWorkComplete(gameId, checked){
+async function toggleWorkComplete(gameId, checked, checkboxEl){
   const myEmail = auth.currentUser?.email?.toLowerCase();
   if (!myEmail) return;
+  // 서버 응답을 기다리지 않고, 체크하자마자 카드 색상부터 바로 바꿔줍니다.
+  const card = checkboxEl && checkboxEl.closest('.game-card');
+  if (card) card.classList.toggle('work-done', checked);
+
   const gameRef = doc(db, 'games', gameId);
   const g = games.find(x=>x.id===gameId);
   g.completedBy = g.completedBy || [];
   if (checked && !g.completedBy.includes(myEmail)) g.completedBy.push(myEmail);
   if (!checked) g.completedBy = g.completedBy.filter(e=>e!==myEmail);
-  await updateDoc(gameRef, { completedBy: g.completedBy });
+  try{
+    await updateDoc(gameRef, { completedBy: g.completedBy });
+  }catch(e){
+    // 저장에 실패하면 화면 표시도 원래대로 되돌립니다.
+    if (checked) g.completedBy = g.completedBy.filter(e=>e!==myEmail);
+    else g.completedBy.push(myEmail);
+    if (card) card.classList.toggle('work-done', !checked);
+    alert('작업 완료 상태를 저장하지 못했습니다: ' + e.message);
+  }
 }
 
 async function deleteGame(gameId){
