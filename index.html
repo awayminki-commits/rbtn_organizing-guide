@@ -10,6 +10,7 @@
     --surface: #FFFFFF;
     --ink: #1B1C1A;
     --ink-soft: #63645F;
+    --ink-mid: #46473F;
     --line: #E3E3DE;
     --accent: #E4141B;
     --accent-soft: #FCE9E8;
@@ -55,7 +56,7 @@
   .game-card{background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:16px; cursor:pointer; transition:border-color .15s, transform .15s;}
   .game-card:hover{border-color:var(--accent); transform:translateY(-2px);}
   .game-card .name{font-weight:800; font-size:16px; letter-spacing:-0.01em; margin:0 0 6px;}
-  .game-card .meta{font-size:11.5px; color:var(--ink-soft); font-family:var(--mono);}
+  .game-card .meta{font-size:11.5px; color:var(--ink-mid); font-family:var(--sans); font-weight:600;}
   .game-card.no-guide{opacity:.6;}
   .game-card.no-guide:hover{opacity:.85;}
   .game-card.no-guide .name{color:var(--ink-soft); font-weight:700;}
@@ -167,14 +168,14 @@
   .pg-game-row{display:flex; align-items:center; gap:8px; padding:8px 6px; border-radius:6px; font-size:13px; cursor:pointer;}
   .pg-game-row:hover{background:var(--bg);}
   .pg-game-name{flex:1;}
-  .pg-game-id{font-family:var(--mono); font-size:11px; color:var(--ink-soft);}
+  .pg-game-id{font-family:var(--sans); font-weight:600; font-size:11px; color:var(--ink-mid);}
   .pg-top50-badge{font-size:10px; font-weight:800; color:var(--accent); background:color-mix(in srgb, var(--accent) 12%, white); border-radius:4px; padding:2px 6px; flex-shrink:0;}
   .pg-search{width:100%; box-sizing:border-box; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-size:13px; font-family:var(--sans); margin-bottom:10px;}
   .pg-search:focus{outline:none; border-color:var(--accent);}
   .pg-table{width:100%; border-collapse:collapse; font-size:13px;}
   .pg-table th{text-align:left; font-size:11.5px; color:var(--ink-soft); font-weight:600; padding:0 8px 8px; border-bottom:1px solid var(--line);}
   .pg-table td{padding:10px 8px; border-bottom:1px solid var(--line); vertical-align:middle;}
-  .pg-size{font-family:var(--mono); font-size:12px; color:var(--ink-soft);}
+  .pg-size{font-family:var(--sans); font-weight:600; font-size:12px; color:var(--ink-mid);}
   .pg-qty{font-weight:700;}
   .pg-option{font-size:12px; color:var(--ink-soft);}
   .pg-note{font-size:11.5px; color:var(--ink-soft); margin-top:14px; line-height:1.5;}
@@ -194,8 +195,8 @@
   .dash-progress-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:16px;}
   .dash-progress-bar-track{position:relative; width:100%; height:28px; background:var(--bg); border-radius:999px; overflow:hidden; border:1px solid var(--line);}
   .dash-progress-bar-fill{position:absolute; top:0; left:0; bottom:0; background:var(--accent); border-radius:999px; transition:width .3s;}
-  .dash-progress-bar-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:var(--ink); font-family:var(--mono); text-shadow:0 0 4px #fff, 0 0 8px #fff, 0 0 2px #fff;}
-  .dash-count{font-family:var(--mono); font-size:12px; font-weight:700; color:var(--accent);}
+  .dash-progress-bar-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:var(--ink); font-family:var(--sans); text-shadow:0 0 4px #fff, 0 0 8px #fff, 0 0 2px #fff;}
+  .dash-count{font-family:var(--sans); font-size:12px; font-weight:700; color:var(--accent);}
 
   /* ---- 권한 관리 ---- */
   .access-section{margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--line);}
@@ -207,15 +208,15 @@
   .access-row-pending:last-child{border-bottom:none;}
   .access-person{display:flex; align-items:center; gap:6px; flex:1; min-width:0;}
   .access-empty{font-size:12.5px; color:var(--ink-soft); padding:6px 0;}
-  .access-email-only{font-family:var(--mono); font-size:12.5px; word-break:break-all; color:var(--ink-soft);}
-  .access-email-sub{font-family:var(--mono); font-size:11px; color:var(--ink-soft); margin-top:1px;}
+  .access-email-only{font-family:var(--sans); font-weight:600; font-size:12.5px; word-break:break-all; color:var(--ink-mid);}
+  .access-email-sub{font-family:var(--sans); font-size:11.5px; color:var(--ink-mid); margin-top:1px;}
   .access-actions{display:flex; gap:6px; flex-shrink:0; flex-wrap:wrap; align-items:center;}
 
   /* ---- 이전 버전(이력) ---- */
   .history-list{max-height:340px; overflow-y:auto; margin-top:6px;}
   .history-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); flex-wrap:wrap;}
   .history-row:last-child{border-bottom:none;}
-  .history-time{font-family:var(--mono); font-size:12.5px; font-weight:700;}
+  .history-time{font-family:var(--sans); font-size:12.5px; font-weight:700; color:var(--ink);}
   .history-meta{font-size:12px; color:var(--ink-soft); margin-top:2px;}
   .history-actions{display:flex; gap:6px; flex-shrink:0;}
 
@@ -661,7 +662,7 @@ async function renderAccessManagement(){
       <div style="max-height:240px; overflow-y:auto;">
         ${stores.map(s=>`
           <div class="access-row">
-            <span class="access-email-only">${s.name} <span style="color:var(--ink-soft); font-family:var(--mono); font-size:11px;">${s.code}</span></span>
+            <span class="access-email-only">${s.name} <span style="color:var(--ink-mid); font-family:var(--sans); font-size:11px;">${s.code}</span></span>
             <div class="access-actions">
               <button class="btn btn-ghost2" style="width:auto; padding:4px 8px; font-size:11.5px;" onclick="removeStore('${s.code}')">삭제</button>
             </div>
@@ -1474,7 +1475,7 @@ function renderDetail(){
     <div id="presenceBannerSlot"></div>
     <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
       <div>
-        <h2 style="margin:0 0 4px;">${g.name} <span style="font-size:12px; font-weight:400; font-family:var(--mono); color:var(--ink-soft);">ID ${g.id}</span></h2>
+        <h2 style="margin:0 0 4px;">${g.name} <span style="font-size:12px; font-weight:600; font-family:var(--sans); color:var(--ink-mid);">ID ${g.id}</span></h2>
         ${editable ? `
           <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-soft); cursor:pointer;">
             <input type="checkbox" ${g.guideDone?'checked':''} onchange="toggleGuideDone(this.checked)"> 가이드 제작 완료
