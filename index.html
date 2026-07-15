@@ -1127,7 +1127,7 @@ function openPurchaseGuide(){
       <div class="pg-actions">
         <button class="btn btn-primary2" style="width:auto;" onclick="selectAllTop50Games()">TOP50 게임 선택</button>
         <button class="btn btn-ghost2" style="width:auto;" onclick="deselectAllPurchaseGames()">전체 해제</button>
-        <button class="btn btn-ghost2" style="width:auto;" onclick="exportGameCaseCountsCsv_()" title="전체 게임의 케이스 종류별 수량을 CSV로 내보냅니다 (엑셀 구매가이드 양식에 붙여넣기용)">📄 전체 게임 케이스 수량 CSV 내보내기</button>
+        <button class="btn btn-ghost2" style="width:auto;" onclick="exportGameCaseCountsCsv_()" title="전체 게임의 케이스 종류별 수량과 TOP50 여부를 CSV로 내보냅니다 (엑셀 구매가이드 양식에 붙여넣기용)">📄 전체 게임 케이스 수량 CSV 내보내기</button>
       </div>
     </div>
     <div class="pg-body">
@@ -1239,12 +1239,13 @@ function deselectAllPurchaseGames(){
  */
 function exportGameCaseCountsCsv_(){
   const PLASTIC_CASE_TYPES = CASE_TYPES.filter(t => t !== 'ZIP');
-  const rows = [['게임ID', '게임이름', ...PLASTIC_CASE_TYPES]];
+  const top50Ids = new Set(TOP50_CASE_GAMES.map(g=>g.id));
+  const rows = [['게임ID', '게임이름', 'TOP50', ...PLASTIC_CASE_TYPES]];
 
   games.slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''), 'ko')).forEach(g=>{
     const counts = {};
     (g.cases||[]).forEach(c=>{ if (c.caseType !== 'ZIP' && c.caseType !== NON_CASE_TYPE) counts[c.caseType] = (counts[c.caseType]||0) + 1; });
-    rows.push([g.id, g.name || '', ...PLASTIC_CASE_TYPES.map(t => counts[t] || 0)]);
+    rows.push([g.id, g.name || '', top50Ids.has(String(g.id)) ? 'TRUE' : 'FALSE', ...PLASTIC_CASE_TYPES.map(t => counts[t] || 0)]);
   });
 
   const csvEscape = v => {
