@@ -2110,7 +2110,7 @@ async function resolvePhotoUrl_(storagePath){
  * ============================================================
  */
 const GUIDE_EXPORT_W = 1600, GUIDE_EXPORT_H = 1200; // 4:3, 사진 스테이지와 동일한 비율
-const GUIDE_EXPORT_SCALE = GUIDE_EXPORT_W / 700; // 화면상 대략적인 스테이지 폭(700px) 기준 배율
+const GUIDE_EXPORT_DEFAULT_REF_WIDTH = 700; // 스테이지 실제 폭을 못 잴 때 쓰는 대략값
 
 function wrapCanvasText_(ctx, text, maxWidth){
   const words = String(text||'').split(/\s+/).filter(Boolean);
@@ -2129,8 +2129,10 @@ function wrapCanvasText_(ctx, text, maxWidth){
   return lines.length ? lines : [''];
 }
 
-async function renderPhotoToCanvas_(g, photo){
-  const k = GUIDE_EXPORT_SCALE;
+async function renderPhotoToCanvas_(g, photo, refWidth){
+  // 마커/텍스트박스/라벨의 px 크기(패딩·폰트 등)는 실제 화면의 사진 영역 폭을 기준으로 정해져 있으므로,
+  // 지금 화면에 실제로 그려진 사진 영역 폭을 그대로 기준 삼아야 화면에서 보는 비율과 똑같이 나옵니다.
+  const k = GUIDE_EXPORT_W / (refWidth || GUIDE_EXPORT_DEFAULT_REF_WIDTH);
   const canvas = document.createElement('canvas');
   canvas.width = GUIDE_EXPORT_W;
   canvas.height = GUIDE_EXPORT_H;
@@ -2148,7 +2150,7 @@ async function renderPhotoToCanvas_(g, photo){
         const im = new Image();
         im.crossOrigin = 'anonymous';
         im.onload = ()=>resolve(im);
-        im.onerror = reject;
+        im.onerror = ()=>reject(new Error('CORS_OR_NETWORK'));
         im.src = url;
       });
       const scale = Math.min(canvas.width/img.width, canvas.height/img.height);
@@ -2156,6 +2158,7 @@ async function renderPhotoToCanvas_(g, photo){
       const dx = (canvas.width-dw)/2, dy = (canvas.height-dh)/2;
       ctx.drawImage(img, dx, dy, dw, dh);
     }catch(e){
+      console.error('가이드 이미지 내보내기: 사진 로드 실패 (Storage 버킷의 CORS 설정이 필요할 수 있습니다)', e);
       ctx.fillStyle = '#999';
       ctx.font = `${14*k}px sans-serif`;
       ctx.textAlign = 'center';
@@ -2355,7 +2358,9 @@ async function downloadGuideImage(idx){
   const photo = g.photos[idx];
   if (!photo) return;
   try{
-    const canvas = await renderPhotoToCanvas_(g, photo);
+    const stageEl = document.getElementById('photoStage');
+    const refWidth = stageEl ? stageEl.getBoundingClientRect().width : GUIDE_EXPORT_DEFAULT_REF_WIDTH;
+    const canvas = await renderPhotoToCanvas_(g, photo, refWidth);
     const suffix = (g.photos.length > 1) ? `_사진${idx+1}` : '';
     downloadCanvasAsPng_(canvas, `${g.name || 'game'}${suffix}.png`);
   }catch(e){
@@ -2366,9 +2371,11 @@ async function downloadGuideImage(idx){
 async function downloadAllGuideImages(){
   const g = games.find(x=>x.id===currentGameId);
   if (!g.photos || !g.photos.length) return;
+  const stageEl = document.getElementById('photoStage');
+  const refWidth = stageEl ? stageEl.getBoundingClientRect().width : GUIDE_EXPORT_DEFAULT_REF_WIDTH;
   for (let i=0; i<g.photos.length; i++){
     try{
-      const canvas = await renderPhotoToCanvas_(g, g.photos[i]);
+      const canvas = await renderPhotoToCanvas_(g, g.photos[i], refWidth);
       downloadCanvasAsPng_(canvas, `${g.name || 'game'}_사진${i+1}.png`);
     }catch(e){
       alert(`${i+1}번째 사진을 만드는 중 문제가 발생했습니다: ` + e.message);
