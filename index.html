@@ -63,6 +63,8 @@
   .game-card.no-guide{opacity:.6;}
   .game-card.no-guide:hover{opacity:.85;}
   .game-card.no-guide .name{color:var(--ink-soft); font-weight:700;}
+  .game-card.work-done{background:#EAF6EC; border-color:#B9DFC0;}
+  .game-card.work-done:hover{border-color:#7FBE8B;}
   .card-select{width:15px; height:15px; accent-color:var(--accent); cursor:pointer; flex-shrink:0;}
 
   .selection-panel{background:var(--surface); border:1px solid var(--accent); border-radius:12px; padding:14px 16px; margin-bottom:16px;}
@@ -1523,6 +1525,7 @@ async function toggleGuideDoneFor(checkbox, gameId){
 
 let listSearch_ = '';
 let listSort_ = 'name'; // 'name' | 'updated'
+let listWorkFilter_ = 'all'; // 'all' | 'done' | 'undone' (작업 완료 여부 기준)
 let listSelectedIds_ = new Set(); // 목록에서 체크한 게임들 (필요 케이스 합계 확인용)
 
 function renderList(){
@@ -1530,13 +1533,18 @@ function renderList(){
   currentGameId = null;
 
   appEl.innerHTML = `
-    <div style="display:flex; gap:8px; margin-bottom:14px;">
+    <div style="display:flex; gap:8px; margin-bottom:14px; flex-wrap:wrap;">
       <input type="text" id="listSearchInput" placeholder="게임 이름 검색 (초성 가능)" value="${listSearch_}"
-        style="flex:1; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-size:13px;">
+        style="flex:1; min-width:200px; padding:9px 12px; border:1px solid var(--line); border-radius:8px; font-size:13px;">
       <select id="listSortSelect" style="padding:9px 10px; border:1px solid var(--line); border-radius:8px; font-size:13px;">
         <option value="name" ${listSort_==='name'?'selected':''}>이름순</option>
         <option value="updated" ${listSort_==='updated'?'selected':''}>최근 수정순</option>
       </select>
+      <div class="tabs" id="listWorkFilterTabs" style="margin-bottom:0;">
+        <button data-v="all" class="${listWorkFilter_==='all'?'active':''}" onclick="setListWorkFilter_('all')">전체</button>
+        <button data-v="undone" class="${listWorkFilter_==='undone'?'active':''}" onclick="setListWorkFilter_('undone')">작업 미완료</button>
+        <button data-v="done" class="${listWorkFilter_==='done'?'active':''}" onclick="setListWorkFilter_('done')">작업 완료</button>
+      </div>
     </div>
     <div id="listSelectionSlot"></div>
     <div class="game-list" id="gameListResults"></div>
@@ -1556,6 +1564,12 @@ function renderList(){
   renderGameListResults_();
 }
 
+function setListWorkFilter_(v){
+  listWorkFilter_ = v;
+  document.querySelectorAll('#listWorkFilterTabs button').forEach(b=>b.classList.toggle('active', b.dataset.v===v));
+  renderGameListResults_();
+}
+
 function renderGameListResults_(){
   const container = document.getElementById('gameListResults');
   const selectionSlot = document.getElementById('listSelectionSlot');
@@ -1564,6 +1578,12 @@ function renderGameListResults_(){
   const myEmail = auth.currentUser?.email?.toLowerCase();
 
   let filtered = games.filter(g => !listSearch_ || (g.name||'').includes(listSearch_) || getChosung(g.name||'').includes(getChosung(listSearch_)));
+  if (listWorkFilter_ !== 'all'){
+    filtered = filtered.filter(g=>{
+      const isDone = myEmail && (g.completedBy||[]).includes(myEmail);
+      return listWorkFilter_ === 'done' ? isDone : !isDone;
+    });
+  }
   filtered = filtered.slice().sort((a,b)=>{
     if (listSort_ === 'updated') return (b.updatedAt||0) - (a.updatedAt||0);
     return String(a.name||'').localeCompare(String(b.name||''), 'ko');
@@ -1575,7 +1595,7 @@ function renderGameListResults_(){
     const done = myEmail && (g.completedBy||[]).includes(myEmail);
     const checked = listSelectedIds_.has(String(g.id));
     return `
-    <div class="game-card ${g.guideDone ? '' : 'no-guide'}" style="position:relative;">
+    <div class="game-card ${g.guideDone ? '' : 'no-guide'} ${done ? 'work-done' : ''}" style="position:relative;">
       <div style="display:flex; align-items:center; gap:7px; margin-bottom:2px;">
         <input type="checkbox" class="card-select" ${checked?'checked':''} onclick="event.stopPropagation();" onchange="toggleGameSelect_('${g.id}')" title="선택해서 필요 케이스 모아보기">
         <div class="meta" style="flex:1;">ID ${g.id}</div>
@@ -3320,7 +3340,7 @@ Object.assign(window, {
   createLabelFromMarker, changeLabelFontSize, rotateLabel, deleteLabel, duplicateLabel,
   rotateCrop_, closeCropModal_, applyCropAndUpload_,
   showHistoryModal_, restoreHistory_,
-  toggleWorkComplete, deleteGame, toggleGameSelect_, clearListSelection_,
+  toggleWorkComplete, deleteGame, toggleGameSelect_, clearListSelection_, setListWorkFilter_,
   toggleGuideDone, updateGameNote,
   openDashboard, closeDashboard, setDashboardFilter, toggleGuideDoneFor,
   openAccessManagement, approveRequest, rejectRequest, addDirectAccess, removeAccess, addStore, removeStore,
