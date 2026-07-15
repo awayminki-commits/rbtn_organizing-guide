@@ -66,6 +66,8 @@
   .case-table th{text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); padding:8px 10px; border-bottom:2px solid var(--ink);}
   .case-table td{padding:10px; border-bottom:1px solid var(--line); vertical-align:middle;}
   .case-table tr:last-child td{border-bottom:none;}
+  .case-table tr.case-end td{border-bottom:2px solid var(--ink);}
+  .case-table tr.case-end:last-child td{border-bottom:none;}
   .case-table input, .case-table select{width:100%; border:1px solid transparent; background:transparent; padding:6px 8px; border-radius:6px; font-size:13.5px; font-family:var(--sans); color:var(--ink);}
   .case-table input:focus, .case-table select:focus{border-color:var(--accent); background:var(--bg); outline:none;}
 
@@ -80,12 +82,19 @@
   .tabs button.active{background:var(--surface); color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.08);}
 
   .photo-stage{position:relative; width:100%; aspect-ratio:4/3; background-color:#EDEDE8; background-size:contain; background-position:center; background-repeat:no-repeat; border-radius:10px; overflow:hidden; border:1px solid var(--line);}
-  .photo-nav{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
-  .marker{position:absolute; width:24px; height:24px; border-radius:50%; background:var(--c,var(--accent)); border:2.5px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,.35); transform:translate(-50%,-50%); cursor:grab; display:flex; align-items:center; justify-content:center; color:#fff; font-family:var(--mono); font-weight:700; font-size:11px; z-index:5;}
+  .nav-zone{position:absolute; top:0; bottom:0; width:40%; z-index:2; cursor:pointer; display:flex; align-items:center; font-size:30px; font-weight:700; color:#fff; text-shadow:0 1px 5px rgba(0,0,0,.6); opacity:0; transition:opacity .15s, background .15s;}
+  .nav-zone:hover{opacity:1;}
+  .nav-zone-left{left:0; justify-content:flex-start; padding-left:12px; background:linear-gradient(to right, rgba(0,0,0,.16), transparent);}
+  .nav-zone-right{right:0; justify-content:flex-end; padding-right:12px; background:linear-gradient(to left, rgba(0,0,0,.16), transparent);}
+  .photo-nav{display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap;}
+  .marker-size-control{display:flex; align-items:center; gap:8px; font-size:12px; color:var(--ink-soft);}
+  .marker-size-control input[type=range]{width:110px;}
+  .marker{position:absolute; width:var(--marker-size,24px); height:var(--marker-size,24px); border-radius:50%; background:var(--c,var(--accent)); border:2.5px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,.35); transform:translate(-50%,-50%); cursor:grab; display:flex; align-items:center; justify-content:center; color:#fff; font-family:var(--mono); font-weight:700; font-size:calc(var(--marker-size,24px) * 0.46); z-index:5;}
   .line-layer{position:absolute; inset:0; pointer-events:none; z-index:1; overflow:visible;}
-  .conn-line{position:absolute; height:0; border-top:1.5px dashed rgba(255,255,255,.9); transform-origin:0 0; pointer-events:none;}
+  .conn-line{position:absolute; height:0; border-top:2.2px solid rgba(80,80,75,.85); transform-origin:0 0; pointer-events:none;}
   .marker:active{cursor:grabbing;}
-  .anno-box{position:absolute; background:rgba(255,255,255,.98); border:1px solid var(--line); border-radius:8px; padding:8px 10px; min-width:150px; max-width:220px; box-shadow:0 3px 12px rgba(0,0,0,.2); font-size:11.5px; cursor:grab;}
+  .anno-box{position:absolute; background:rgba(255,255,255,.98); border:1px solid var(--line); border-left:4px solid var(--c, var(--line)); border-radius:8px; padding:8px 10px; min-width:150px; max-width:220px; box-shadow:0 3px 12px rgba(0,0,0,.2); font-size:11.5px; cursor:grab;}
+  .anno-box.readonly{cursor:default;}
   .anno-box:active{cursor:grabbing;}
   .anno-head{display:flex; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:wrap;}
   .anno-head select{font-family:var(--mono); font-weight:800; font-size:12px; padding:2px 4px; border:1px solid var(--line); border-radius:5px; background:var(--bg);}
@@ -141,6 +150,50 @@
   .pg-table{width:100%; border-collapse:collapse; font-size:13px;}
   .pg-table th{text-align:left; font-size:11.5px; color:var(--ink-soft); font-weight:600; padding:0 8px 8px; border-bottom:1px solid var(--line);}
   .pg-table td{padding:10px 8px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  .pg-size{font-family:var(--mono); font-size:12px; color:var(--ink-soft);}
+  .pg-qty{font-weight:700;}
+  .pg-option{font-size:12px; color:var(--ink-soft);}
+  .pg-note{font-size:11.5px; color:var(--ink-soft); margin-top:14px; line-height:1.5;}
+  .pg-head{margin-bottom:16px;}
+  .pg-head h2{font-size:19px; margin:0 0 6px;}
+  .pg-desc{font-size:12.5px; color:var(--ink-soft); max-width:640px; line-height:1.5; margin:0 0 12px;}
+  .pg-actions{display:flex; gap:8px;}
+
+  /* ---- 도움말 모달 ---- */
+  .help-modal{max-width:560px; max-height:85vh; overflow-y:auto;}
+  .help-list{margin:0; padding-left:18px; font-size:13.5px; line-height:1.6;}
+  .help-list li{margin-bottom:10px;}
+  .help-list ul{margin-top:6px; padding-left:16px;}
+  .help-list ul li{margin-bottom:6px; font-size:13px; color:var(--ink-soft);}
+
+  /* ---- 진행 현황(대시보드) ---- */
+  .dash-progress-card{background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:16px;}
+  .dash-progress-bar-track{position:relative; width:100%; height:28px; background:var(--bg); border-radius:999px; overflow:hidden; border:1px solid var(--line);}
+  .dash-progress-bar-fill{position:absolute; top:0; left:0; bottom:0; background:var(--accent); border-radius:999px; transition:width .3s;}
+  .dash-progress-bar-label{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; color:var(--ink); font-family:var(--mono); text-shadow:0 0 4px #fff, 0 0 8px #fff, 0 0 2px #fff;}
+  .dash-count{font-family:var(--mono); font-size:12px; font-weight:700; color:var(--accent);}
+
+  /* ---- 권한 관리 ---- */
+  .access-section{margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--line);}
+  .access-section:last-of-type{border-bottom:none; margin-bottom:8px;}
+  .access-section-title{font-size:12px; font-weight:700; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.04em; margin-bottom:10px;}
+  .access-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:8px 0; font-size:13px; flex-wrap:wrap; border-bottom:1px solid var(--line);}
+  .access-row:last-child{border-bottom:none;}
+  .access-row-pending{flex-direction:column; align-items:stretch; padding:10px 0; border-bottom:1px dashed var(--line);}
+  .access-row-pending:last-child{border-bottom:none;}
+  .access-person{display:flex; align-items:center; gap:6px; flex:1; min-width:0;}
+  .access-empty{font-size:12.5px; color:var(--ink-soft); padding:6px 0;}
+  .access-email-only{font-family:var(--mono); font-size:12.5px; word-break:break-all; color:var(--ink-soft);}
+  .access-email-sub{font-family:var(--mono); font-size:11px; color:var(--ink-soft); margin-top:1px;}
+  .access-actions{display:flex; gap:6px; flex-shrink:0; flex-wrap:wrap; align-items:center;}
+
+  /* ---- 이전 버전(이력) ---- */
+  .history-list{max-height:340px; overflow-y:auto; margin-top:6px;}
+  .history-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); flex-wrap:wrap;}
+  .history-row:last-child{border-bottom:none;}
+  .history-time{font-family:var(--mono); font-size:12.5px; font-weight:700;}
+  .history-meta{font-size:12px; color:var(--ink-soft); margin-top:2px;}
+  .history-actions{display:flex; gap:6px; flex-shrink:0;}
 
   .label-wrap{position:absolute; z-index:6;}
   .label-rotate-group{position:relative; display:inline-block; transform-origin:center center;}
@@ -509,59 +562,75 @@ async function renderAccessManagement(){
     <button class="back" onclick="renderList()">← 목록으로</button>
     <h2 style="margin:0 0 16px;">🔑 권한 관리</h2>
 
-    <h3 style="font-size:14px;">승인 대기 (${pending.length})</h3>
-    ${pending.length ? pending.map(p=>`
-      <div style="display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); flex-wrap:wrap;">
-        <div style="flex:1; min-width:180px;">
-          <div style="font-weight:700; font-size:13px;">${p.name||'-'} · ${p.position||'-'}</div>
-          <div style="font-size:11.5px; color:var(--ink-soft);">${storeName_(p.storeCode)} · ${p.email}</div>
+    <div class="access-section">
+      <div class="access-section-title">승인 대기 (${pending.length})</div>
+      ${pending.length ? pending.map(p=>`
+        <div class="access-row access-row-pending">
+          <div class="access-person">
+            <div>
+              <div style="font-weight:700; font-size:13px;">${p.name||'-'} · ${p.position||'-'}</div>
+              <div class="access-email-sub">${storeName_(p.storeCode)} · ${p.email}</div>
+            </div>
+          </div>
+          <div class="access-actions">
+            <button class="btn btn-primary2" style="width:auto; padding:5px 10px; font-size:12px;" onclick="approveRequest('${p.email}','editor')">편집자로 승인</button>
+            <button class="btn btn-ghost2" style="width:auto; padding:5px 10px; font-size:12px;" onclick="approveRequest('${p.email}','viewer')">뷰어로 승인</button>
+            <button class="btn btn-ghost2" style="width:auto; padding:5px 10px; font-size:12px;" onclick="rejectRequest('${p.email}')">거절</button>
+          </div>
         </div>
-        <button class="btn btn-primary2" style="width:auto; padding:5px 10px; font-size:12px;" onclick="approveRequest('${p.email}','editor')">편집자로 승인</button>
-        <button class="btn btn-ghost2" style="width:auto; padding:5px 10px; font-size:12px;" onclick="approveRequest('${p.email}','viewer')">뷰어로 승인</button>
-        <button class="btn btn-ghost2" style="width:auto; padding:5px 10px; font-size:12px;" onclick="rejectRequest('${p.email}')">거절</button>
+      `).join('') : `<div class="access-empty">대기 중인 요청이 없습니다.</div>`}
+    </div>
+
+    <div class="access-section">
+      <div class="access-section-title">직접 등록</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <input type="text" id="directEmailInput" placeholder="이메일 주소" style="flex:1; min-width:200px; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-size:13px;">
+        <button class="btn btn-primary2" style="width:auto;" onclick="addDirectAccess('editor')">편집자로 등록</button>
+        <button class="btn btn-ghost2" style="width:auto;" onclick="addDirectAccess('viewer')">뷰어로 등록</button>
       </div>
-    `).join('') : `<p style="font-size:12.5px; color:var(--ink-soft);">대기 중인 요청이 없습니다.</p>`}
-
-    <h3 style="font-size:14px; margin-top:24px;">직접 등록</h3>
-    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px;">
-      <input type="text" id="directEmailInput" placeholder="이메일 주소" style="flex:1; min-width:200px; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-size:13px;">
-      <button class="btn btn-primary2" style="width:auto;" onclick="addDirectAccess('editor')">편집자로 등록</button>
-      <button class="btn btn-ghost2" style="width:auto;" onclick="addDirectAccess('viewer')">뷰어로 등록</button>
     </div>
 
-    <h3 style="font-size:14px;">편집자 (${editors.length})</h3>
-    <div style="margin-bottom:20px;">
+    <div class="access-section">
+      <div class="access-section-title">편집자 (${editors.length})</div>
       ${editors.map(e=>`
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--line); font-size:12.5px;">
-          <span>${e.name ? `${e.name} · ` : ''}${e.email}</span>
-          <button class="btn btn-ghost2" style="width:auto; padding:4px 8px; font-size:11.5px;" onclick="removeAccess('${e.email}','editors')">제거</button>
+        <div class="access-row">
+          <span class="access-email-only">${e.name ? `${e.name} · ` : ''}${e.email}</span>
+          <div class="access-actions">
+            <button class="btn btn-ghost2" style="width:auto; padding:4px 8px; font-size:11.5px;" onclick="removeAccess('${e.email}','editors')">제거</button>
+          </div>
         </div>
-      `).join('') || `<p style="font-size:12.5px; color:var(--ink-soft);">없음</p>`}
+      `).join('') || `<div class="access-empty">없음</div>`}
     </div>
 
-    <h3 style="font-size:14px;">뷰어 (${viewers.length})</h3>
-    <div style="margin-bottom:20px;">
+    <div class="access-section">
+      <div class="access-section-title">뷰어 (${viewers.length})</div>
       ${viewers.map(v=>`
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--line); font-size:12.5px;">
-          <span>${v.name ? `${v.name} · ${storeName_(v.storeCode)} · ` : ''}${v.email}</span>
-          <button class="btn btn-ghost2" style="width:auto; padding:4px 8px; font-size:11.5px;" onclick="removeAccess('${v.email}','viewers')">제거</button>
+        <div class="access-row">
+          <span class="access-email-only">${v.name ? `${v.name} · ${storeName_(v.storeCode)} · ` : ''}${v.email}</span>
+          <div class="access-actions">
+            <button class="btn btn-ghost2" style="width:auto; padding:4px 8px; font-size:11.5px;" onclick="removeAccess('${v.email}','viewers')">제거</button>
+          </div>
         </div>
-      `).join('') || `<p style="font-size:12.5px; color:var(--ink-soft);">없음</p>`}
+      `).join('') || `<div class="access-empty">없음</div>`}
     </div>
 
-    <h3 style="font-size:14px;">매장 관리 (${stores.length})</h3>
-    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
-      <input type="text" id="storeCodeInput" placeholder="매장 코드" style="width:140px; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-size:13px;">
-      <input type="text" id="storeNameInput" placeholder="매장 이름" style="flex:1; min-width:140px; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-size:13px;">
-      <button class="btn btn-primary2" style="width:auto;" onclick="addStore()">추가</button>
-    </div>
-    <div style="max-height:240px; overflow-y:auto;">
-      ${stores.map(s=>`
-        <div style="display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--line); font-size:12.5px;">
-          <span>${s.name} <span style="color:var(--ink-soft); font-family:var(--mono); font-size:11px;">${s.code}</span></span>
-          <button class="btn btn-ghost2" style="width:auto; padding:4px 8px; font-size:11.5px;" onclick="removeStore('${s.code}')">삭제</button>
-        </div>
-      `).join('') || `<p style="font-size:12.5px; color:var(--ink-soft);">없음</p>`}
+    <div class="access-section">
+      <div class="access-section-title">매장 관리 (${stores.length})</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+        <input type="text" id="storeCodeInput" placeholder="매장 코드" style="width:140px; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-size:13px;">
+        <input type="text" id="storeNameInput" placeholder="매장 이름" style="flex:1; min-width:140px; padding:8px 10px; border:1px solid var(--line); border-radius:7px; font-size:13px;">
+        <button class="btn btn-primary2" style="width:auto;" onclick="addStore()">추가</button>
+      </div>
+      <div style="max-height:240px; overflow-y:auto;">
+        ${stores.map(s=>`
+          <div class="access-row">
+            <span class="access-email-only">${s.name} <span style="color:var(--ink-soft); font-family:var(--mono); font-size:11px;">${s.code}</span></span>
+            <div class="access-actions">
+              <button class="btn btn-ghost2" style="width:auto; padding:4px 8px; font-size:11.5px;" onclick="removeStore('${s.code}')">삭제</button>
+            </div>
+          </div>
+        `).join('') || `<div class="access-empty">없음</div>`}
+      </div>
     </div>
   `;
 }
@@ -971,15 +1040,17 @@ function openPurchaseGuide(){
 
   appEl.innerHTML = `
     <button class="back" onclick="renderList()">← 목록으로</button>
-    <h2 style="margin:0 0 6px;">🛒 구매 가이드</h2>
-    <p style="font-size:12.5px; color:var(--ink-soft); max-width:640px; line-height:1.5; margin:0 0 12px;">
-      전체 게임 목록에서 필요한 게임을 선택하면, 그 게임들에 필요한 케이스 수량과 구매 링크를 안내합니다.
-      "TOP50 게임 선택"을 누르면 TOP50 중 플라스틱 케이스로 정리하는 ${TOP50_CASE_GAMES.length}종이 한 번에 선택됩니다.
-      매장에 이미 정리된 게임은 체크를 해제해주세요.
-    </p>
-    <div style="display:flex; gap:8px; margin-bottom:16px;">
-      <button class="btn btn-primary2" style="width:auto;" onclick="selectAllTop50Games()">TOP50 게임 선택</button>
-      <button class="btn btn-ghost2" style="width:auto;" onclick="deselectAllPurchaseGames()">전체 해제</button>
+    <div class="pg-head">
+      <h2>🛒 구매 가이드</h2>
+      <p class="pg-desc">
+        전체 게임 목록에서 필요한 게임을 선택하면, 그 게임들에 필요한 케이스 수량과 구매 링크를 안내합니다.
+        "TOP50 게임 선택"을 누르면 TOP50 중 플라스틱 케이스로 정리하는 ${TOP50_CASE_GAMES.length}종이 한 번에 선택됩니다.
+        매장에 이미 정리된 게임은 체크를 해제해주세요.
+      </p>
+      <div class="pg-actions">
+        <button class="btn btn-primary2" style="width:auto;" onclick="selectAllTop50Games()">TOP50 게임 선택</button>
+        <button class="btn btn-ghost2" style="width:auto;" onclick="deselectAllPurchaseGames()">전체 해제</button>
+      </div>
     </div>
     <div class="pg-body">
       <div class="pg-panel">
@@ -990,9 +1061,6 @@ function openPurchaseGuide(){
       <div class="pg-panel">
         <h3>필요한 케이스</h3>
         <div id="pgCaseSummary"></div>
-        <p style="font-size:11.5px; color:var(--ink-soft); margin-top:14px; line-height:1.5;">
-          ※ 실시간 재고 확인은 자동으로 제공되지 않습니다. 구매 링크를 눌러 직접 확인해주세요.
-        </p>
       </div>
     </div>
   `;
@@ -1058,14 +1126,15 @@ function renderPurchaseCaseSummary_(){
           return `
           <tr>
             <td><span class="case-badge case-${t}">${t}</span></td>
-            <td style="font-family:var(--mono); font-size:12px; color:var(--ink-soft);">${CASE_SIZES[t]||'-'}mm</td>
-            <td style="font-weight:700;">${counts[t]}개</td>
-            <td style="font-size:12px; color:var(--ink-soft);">${p.option||'-'}</td>
+            <td class="pg-size">${CASE_SIZES[t]||'-'}mm</td>
+            <td class="pg-qty">${counts[t]}개</td>
+            <td class="pg-option">${p.option||'-'}</td>
             <td>${p.url ? `<a href="${p.url}" target="_blank" rel="noopener" class="btn btn-primary2" style="width:auto; padding:6px 12px; font-size:12.5px; display:inline-flex;">구매하기 ↗</a>` : '-'}</td>
           </tr>`;
         }).join('')}
       </tbody>
     </table>
+    <p class="pg-note">※ 실시간 재고 확인은 자동으로 제공되지 않습니다. 구매 링크를 눌러 직접 확인해주세요.</p>
   `;
 }
 
@@ -1098,11 +1167,11 @@ function openHelpModal(){
   backdrop.className = 'modal-backdrop';
   backdrop.id = 'helpBackdrop';
   backdrop.innerHTML = `
-    <div class="modal" style="max-width:560px; max-height:85vh; overflow-y:auto;">
+    <div class="modal help-modal">
       <h3>이용 방법</h3>
 
       <h4 style="font-size:13px; margin:16px 0 8px;">🙋 뷰어(매장) 안내</h4>
-      <ul style="font-size:12.5px; line-height:1.7; padding-left:18px; margin:0;">
+      <ul class="help-list">
         <li><b>게임 찾기</b> — 목록 상단 검색창에 이름(초성도 가능)을 입력하면 바로 필터링됩니다.</li>
         <li><b>사진 탭</b> — 실제 사진 위에 케이스종류(알파벳)와 위치가 표시됩니다. 점선으로 표시된 라벨은 실제 라벨기 인쇄 모습입니다.</li>
         <li><b>표 탭</b> — 케이스종류·구성품·수량·비고를 표로 확인할 수 있습니다.</li>
@@ -1112,7 +1181,7 @@ function openHelpModal(){
 
       ${currentRole === 'editor' ? `
       <h4 style="font-size:13px; margin:16px 0 8px;">✏️ 편집자 안내</h4>
-      <ul style="font-size:12.5px; line-height:1.7; padding-left:18px; margin:0;">
+      <ul class="help-list">
         <li><b>새 게임 추가</b> — 상단 "+ 새 게임"으로 이름을 입력해 생성합니다.</li>
         <li><b>사진 업로드</b> — 사진 탭에서 파일 선택 후 자르기·회전(90도씩)·전체 축소(여백 포함) 편집창이 뜹니다. 실제 저장될 모습을 미리 볼 수 있습니다.</li>
         <li><b>마커·텍스트박스</b> — 사진의 빈 곳을 더블클릭하면 마커(알파벳 원)와 텍스트박스가 함께 생깁니다. 각각 드래그로 옮길 수 있고, 텍스트박스에서 케이스종류·구성품·수량·비고를 바로 수정할 수 있습니다. ✕로 마커+케이스를 통째로 삭제합니다.</li>
@@ -1163,9 +1232,12 @@ function renderDashboard(){
   appEl.innerHTML = `
     <button class="back" onclick="closeDashboard()">← 목록으로</button>
     <h2 style="margin:0 0 6px;">📊 작업 진행 현황</h2>
-    <p style="font-size:13px; color:var(--ink-soft); margin:0 0 16px;">${pct}% · 가이드 완료 ${doneCount}/${total}개</p>
-    <div style="height:8px; background:var(--bg); border-radius:99px; overflow:hidden; margin-bottom:16px;">
-      <div style="height:100%; width:${pct}%; background:var(--accent);"></div>
+    <div class="dash-progress-card">
+      <p style="font-size:13px; color:var(--ink-soft); margin:0 0 12px;">${pct}% · 가이드 완료 ${doneCount}/${total}개</p>
+      <div class="dash-progress-bar-track">
+        <div class="dash-progress-bar-fill" style="width:${pct}%;"></div>
+        <div class="dash-progress-bar-label">${pct}%</div>
+      </div>
     </div>
     <div class="crop-toolbar" style="margin-bottom:14px;">
       <button onclick="setDashboardFilter('all')" style="${dashboardFilter_==='all'?'background:var(--ink); color:#fff;':''}">전체</button>
@@ -1180,7 +1252,7 @@ function renderDashboard(){
             <td>${g.name}</td>
             <td>${(g.photos||[]).length ? '있음' : '-'}</td>
             <td><input type="checkbox" ${g.guideDone?'checked':''} onchange="toggleGuideDoneFor(this, '${g.id}')"></td>
-            <td>${(g.completedBy||[]).length}개</td>
+            <td><span class="dash-count">${(g.completedBy||[]).length}개</span></td>
             <td><button class="btn btn-ghost2" style="width:auto; padding:5px 10px; font-size:12px;" onclick="openGame('${g.id}')">열기</button></td>
           </tr>
         `).join('') || `<tr><td colspan="5" style="color:var(--ink-soft);">해당하는 게임이 없습니다.</td></tr>`}
@@ -1391,19 +1463,30 @@ async function renderPhotoTab(){
       <button class="btn btn-ghost2" style="width:auto;" onclick="prevPhoto()" ${photos.length<2?'disabled':''}>◀</button>
       <span style="font-size:12.5px; color:var(--ink-soft);">${currentPhotoIdx+1} / ${photos.length}</span>
       <button class="btn btn-ghost2" style="width:auto;" onclick="nextPhoto()" ${photos.length<2?'disabled':''}>▶</button>
-      ${editable ? `<button class="btn btn-ghost2" style="width:auto; margin-left:auto;" onclick="deletePhoto()">사진 삭제</button>` : ''}
+      ${editable ? `
+        <div class="marker-size-control" style="margin-left:auto;">
+          <label>마커 크기</label>
+          <input type="range" min="16" max="44" value="${g.markerSize||24}" oninput="previewMarkerSize(this.value)" onchange="updateMarkerSize(this.value)">
+        </div>
+        <button class="btn btn-ghost2" style="width:auto;" onclick="deletePhoto()">사진 삭제</button>
+      ` : ''}
     </div>
-    <div class="photo-stage" id="photoStage">
+    <div class="photo-stage" id="photoStage" style="--marker-size:${g.markerSize||24}px;">
       <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#999; font-size:12px;">불러오는 중...</div>
     </div>
     ${editable ? `<p style="margin-top:8px; font-size:11.5px;">사진의 빈 곳을 더블클릭하면 새 마커와 텍스트박스가 추가됩니다. 마커와 텍스트박스는 각각 드래그로 옮길 수 있고, 텍스트박스 안에서 케이스종류·구성품·수량을 바로 수정할 수 있습니다.</p>` : ''}
+    ${!editable && photos.length>1 ? `<p style="margin-top:8px; font-size:11.5px; color:var(--ink-soft);">사진 좌우를 클릭하면 이전/다음 사진으로 넘길 수 있습니다.</p>` : ''}
   `;
 
   const url = await resolvePhotoUrl_(photo.storagePath);
   const stage = document.getElementById('photoStage');
   if (!stage) return; // 그 사이 다른 사진으로 넘어갔으면 중단
   stage.style.backgroundImage = `url('${url}')`;
-  stage.innerHTML = '<div class="line-layer" id="lineLayer"></div>';
+  stage.innerHTML = '<div class="line-layer" id="lineLayer"></div>' +
+    (!editable && photos.length>1 ? `
+      <div class="nav-zone nav-zone-left" onclick="prevPhoto()" title="이전 사진">${currentPhotoIdx>0?'‹':''}</div>
+      <div class="nav-zone nav-zone-right" onclick="nextPhoto()" title="다음 사진">${currentPhotoIdx<photos.length-1?'›':''}</div>
+    ` : '');
   drawMarkers(stage, photo, editable);
   drawLabels(stage, photo, editable);
 
@@ -1464,7 +1547,7 @@ function drawMarkers(stage, photo, editable){
     if (!m.box || !c){ return; } // 구버전 마커(박스 없이 만들어진 것)는 패널 없이 점만 표시
 
     box = document.createElement('div');
-    box.className = 'anno-box';
+    box.className = 'anno-box case-' + c.caseType + (editable ? ' draggable' : ' readonly');
     box.style.left = m.box.x+'%';
     box.style.top = m.box.y+'%';
 
@@ -1552,6 +1635,8 @@ function drawConnLine_(stage, lineLayer, mi, dot, box){
   line.style.top = y1+'px';
   line.style.width = dist+'px';
   line.style.transform = `rotate(${angle}deg)`;
+  const colorVar = getComputedStyle(dot).getPropertyValue('--c');
+  if (colorVar) line.style.borderTopColor = colorVar.trim();
 }
 
 /**
@@ -1582,6 +1667,18 @@ function renderAlignGuides_(stage, xPos, yPos){
 }
 
 // ---- 텍스트박스 안 편집 동작들 ----
+/** 슬라이더를 움직이는 동안: 저장 없이 화면에서만 바로 크기를 미리 봅니다. */
+function previewMarkerSize(v){
+  const stage = document.getElementById('photoStage');
+  if (stage) stage.style.setProperty('--marker-size', v+'px');
+}
+
+/** 슬라이더를 놓으면: 게임 데이터에 반영합니다. (다른 변경사항과 함께 "저장" 시 함께 저장됩니다) */
+function updateMarkerSize(v){
+  const g = games.find(x=>x.id===currentGameId);
+  if (g) g.markerSize = Number(v);
+}
+
 function updateMarkerCaseType(mi, val){
   const g = games.find(x=>x.id===currentGameId);
   const photo = g.photos[currentPhotoIdx];
@@ -2206,17 +2303,19 @@ function renderHistoryModal_(gameId, items){
     <div class="modal" style="max-width:420px;">
       <h3>이전 버전</h3>
       <p style="font-size:12px; color:var(--ink-soft); margin-top:-8px;">저장할 때마다 직전 내용이 최근 5개까지 자동으로 남습니다.</p>
-      ${items.length ? items.map(h=>`
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--line);">
-          <div>
-            <div style="font-family:var(--mono); font-size:12.5px; font-weight:700;">${formatHistoryDate_(h.savedAt)}</div>
-            <div style="font-size:12px; color:var(--ink-soft);">${h.snapshot.name} · 케이스 ${(h.snapshot.cases||[]).length}개</div>
+      <div class="history-list">
+        ${items.length ? items.map(h=>`
+          <div class="history-row">
+            <div>
+              <div class="history-time">${formatHistoryDate_(h.savedAt)}</div>
+              <div class="history-meta">${h.snapshot.name} · 케이스 ${(h.snapshot.cases||[]).length}개</div>
+            </div>
+            <div class="history-actions">
+              <button class="btn btn-ghost2" style="width:auto; padding:5px 10px; font-size:12px;" onclick="restoreHistory_('${gameId}','${h.id}')">복원</button>
+            </div>
           </div>
-          <div style="display:flex; gap:6px;">
-            <button class="btn btn-ghost2" style="width:auto; padding:5px 10px; font-size:12px;" onclick="restoreHistory_('${gameId}','${h.id}')">복원</button>
-          </div>
-        </div>
-      `).join('') : `<p>아직 저장된 이전 버전이 없습니다.</p>`}
+        `).join('') : `<p>아직 저장된 이전 버전이 없습니다.</p>`}
+      </div>
       <div class="modal-actions">
         <button class="btn-cancel" onclick="document.getElementById('historyBackdrop').remove()">닫기</button>
       </div>
@@ -2375,10 +2474,12 @@ function renderTableTab(){
 
   let rows = '';
   cases.forEach((c, ci) => {
-    (c.items||[{name:'',qty:1}]).forEach((it, ii) => {
-      rows += `<tr>`;
+    const items = c.items||[{name:'',qty:1}];
+    items.forEach((it, ii) => {
+      const isLastOfCase = ii === items.length - 1;
+      rows += `<tr class="${isLastOfCase ? 'case-end' : ''}">`;
       if (ii === 0){
-        rows += `<td rowspan="${(c.items||[{}]).length}">
+        rows += `<td rowspan="${items.length}">
           ${editable
             ? `<select onchange="updateCaseType(${ci}, this.value)">${CASE_TYPES.map(t=>`<option value="${t}" ${t===c.caseType?'selected':''}>${t}</option>`).join('')}</select>`
             : `<span class="case-badge case-${c.caseType}">${c.caseType}</span>`}
@@ -2387,7 +2488,7 @@ function renderTableTab(){
       rows += `<td>${editable ? `<input value="${it.name||''}" onchange="updateItem(${ci},${ii},'name',this.value)">` : (it.name||'')}</td>`;
       rows += `<td style="width:80px;">${editable ? `<input type="number" value="${it.qty||0}" onchange="updateItem(${ci},${ii},'qty',this.value)">` : (it.qty||0)}</td>`;
       if (ii === 0){
-        rows += `<td rowspan="${(c.items||[{}]).length}">
+        rows += `<td rowspan="${items.length}">
           ${editable
             ? `<textarea rows="2" style="width:100%; box-sizing:border-box; font-family:var(--sans); resize:vertical; padding:6px 8px; border:1px solid var(--line); border-radius:6px; font-size:13px;" placeholder="비고" onchange="updateCaseNote(${ci}, this.value)">${c.note||''}</textarea>`
             : `<span style="white-space:pre-wrap;">${c.note||''}</span>`}
@@ -2449,6 +2550,7 @@ Object.assign(window, {
   prevPhoto, nextPhoto, uploadPhoto, deletePhoto,
   addCase, updateCaseType, updateCaseNote, updateItem, deleteItem, saveGame, doLogout,
   updateMarkerCaseType, updateMarkerItem, addMarkerItem, deleteMarkerItem, removeMarkerCase,
+  previewMarkerSize, updateMarkerSize,
   createLabelFromMarker, changeLabelFontSize, rotateLabel, deleteLabel,
   rotateCrop_, closeCropModal_, applyCropAndUpload_,
   showHistoryModal_, restoreHistory_,
