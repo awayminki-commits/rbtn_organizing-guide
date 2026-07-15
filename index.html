@@ -90,17 +90,14 @@
   .case-ITEM{--c:#D98A1D;}
   .case-badge{display:inline-flex; align-items:center; gap:7px; font-family:var(--mono); font-weight:800; font-size:14px; padding:6px 12px 6px 9px; border-radius:7px; border:2.2px solid var(--c); color:var(--c); background:color-mix(in srgb, var(--c) 10%, white); line-height:1;}
   .case-badge::before{content:''; width:9px; height:9px; border-radius:50%; background:var(--c); flex-shrink:0;}
-  /* 플라스틱 케이스 없이 구성품 자체를 가리키는 마커: 원 대신 화살표(핀) 모양 */
+  /* 플라스틱 케이스 없이 구성품 자체를 가리키는 마커: 원 대신 화살표 모양 (연결선과 정확히 이어지도록
+     회전각과 뾰족한 끝 위치는 JS에서 연결선과 같은 방식으로 계산해 매번 맞춰줍니다) */
   .marker.marker-item{
-    width:0; height:0; background:transparent; border-radius:0; box-shadow:none;
-    border:0 solid transparent;
-    border-left:9px solid transparent; border-right:9px solid transparent;
-    border-bottom:16px solid var(--c, #D98A1D);
-    transform:translate(-50%,-100%) rotate(-45deg);
-    transform-origin:50% 100%;
-  }
-  .marker.marker-item::after{
-    content:''; position:absolute; left:-4.5px; top:16px; width:9px; height:9px; border-radius:50%; background:var(--c, #D98A1D);
+    width:26px; height:20px; background:var(--c, #D98A1D); border-radius:0; box-shadow:none;
+    border:none;
+    clip-path: polygon(100% 50%, 0% 0%, 0% 100%);
+    filter: drop-shadow(0 1px 3px rgba(0,0,0,.4));
+    transform-origin:100% 50%;
   }
 
   .tabs{display:flex; gap:4px; background:var(--bg); border:1px solid var(--line); border-radius:9px; padding:3px; margin-bottom:14px; width:fit-content;}
@@ -1729,11 +1726,20 @@ function drawMarkers(stage, photo, editable){
 function drawConnLine_(stage, lineLayer, mi, dot, box){
   if (!lineLayer || !dot || !box) return;
   const stageRect = stage.getBoundingClientRect();
-  const dotRect = dot.getBoundingClientRect();
-  const boxRect = box.getBoundingClientRect();
+  const isItem = dot.classList.contains('marker-item');
 
-  const x1 = (dotRect.left + dotRect.width/2) - stageRect.left;
-  const y1 = (dotRect.top + dotRect.height/2) - stageRect.top;
+  // 화살표 마커는 회전에 따라 실제 렌더링된 사각형(getBoundingClientRect)의 중심이 뾰족한 끝과
+  // 달라지므로, 대신 저장된 위치(%)로 목표 지점을 정확히 계산합니다.
+  let x1, y1;
+  if (isItem){
+    x1 = parseFloat(dot.style.left) / 100 * stageRect.width;
+    y1 = parseFloat(dot.style.top) / 100 * stageRect.height;
+  } else {
+    const dotRect = dot.getBoundingClientRect();
+    x1 = (dotRect.left + dotRect.width/2) - stageRect.left;
+    y1 = (dotRect.top + dotRect.height/2) - stageRect.top;
+  }
+  const boxRect = box.getBoundingClientRect();
   const x2 = boxRect.left - stageRect.left; // 박스의 왼쪽 가장자리 중앙 (마커가 대체로 왼쪽에 있음)
   const y2 = (boxRect.top + boxRect.height/2) - stageRect.top;
 
@@ -1754,6 +1760,12 @@ function drawConnLine_(stage, lineLayer, mi, dot, box){
   line.style.transform = `rotate(${angle}deg)`;
   const colorVar = getComputedStyle(dot).getPropertyValue('--c');
   if (colorVar) line.style.borderTopColor = colorVar.trim();
+
+  // 화살표 마커는 뾰족한 끝이 정확히 목표 지점(%)에 오도록, 그리고 선과 같은 각도를 향하도록
+  // (선은 화살표 쪽을 향해 그려지므로, 화살표는 그 반대 방향 = 선의 연장선을 가리켜야 합니다) 회전시킵니다.
+  if (isItem){
+    dot.style.transform = `translate(-100%,-50%) rotate(${angle + 180}deg)`;
+  }
 }
 
 /**
