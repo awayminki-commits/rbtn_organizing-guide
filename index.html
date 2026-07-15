@@ -119,7 +119,7 @@
   .marker-size-control input[type=range]{width:110px;}
   .marker{position:absolute; width:var(--marker-size,24px); height:var(--marker-size,24px); border-radius:50%; background:var(--c,var(--accent)); border:2.5px solid #fff; box-shadow:0 1px 4px rgba(0,0,0,.35); transform:translate(-50%,-50%); cursor:grab; display:flex; align-items:center; justify-content:center; color:#fff; font-family:var(--mono); font-weight:700; font-size:calc(var(--marker-size,24px) * 0.46); z-index:5;}
   .line-layer{position:absolute; inset:0; pointer-events:none; z-index:1; overflow:visible;}
-  .conn-line{position:absolute; height:0; border-top:2.2px solid rgba(80,80,75,.85); transform-origin:0 0; pointer-events:none;}
+  .conn-line{position:absolute; height:0; border-top-style:solid; border-top-color:rgba(80,80,75,.85); border-top-width:var(--conn-line-width, 2.2px); transform-origin:0 0; pointer-events:none;}
   .marker:active{cursor:grabbing;}
   .anno-box{position:absolute; z-index:4; background:rgba(255,255,255,.98); border:1px solid var(--line); border-left:4px solid var(--c, var(--line)); border-radius:8px; padding:8px 10px; min-width:150px; max-width:220px; box-shadow:0 3px 12px rgba(0,0,0,.2); font-size:11.5px; cursor:grab;}
   .anno-box.readonly{cursor:default;}
@@ -1432,7 +1432,7 @@ function openHelpModal(){
         <li><b>사진 업로드</b> — 사진 탭에서 파일 선택 후 자르기·회전(90도씩)·전체 축소(여백 포함) 편집창이 뜹니다. 실제 저장될 모습을 미리 볼 수 있습니다. 사진 영역에 파일을 끌어다 놓아도 업로드됩니다.</li>
         <li><b>여러 장의 사진</b> — 사진을 여러 장 올린 경우 "◀ 순서"/"순서 ▶"로 순서를 바꿀 수 있습니다.</li>
         <li><b>표 기준 마커 자동 생성</b> — 표에는 있지만 아직 사진에 마커가 없는 케이스들을 한 번에 격자로 배치합니다. 이후 드래그로 실제 위치에 맞게 옮겨주세요.</li>
-        <li><b>마커·텍스트박스</b> — 사진의 빈 곳을 더블클릭하면 마커(알파벳 원)와 텍스트박스가 함께 생깁니다. 각각 드래그로 옮길 수 있고, 텍스트박스에서 케이스종류·구성품·수량·비고를 바로 수정할 수 있습니다. "복제"로 통째로 복제하거나, ✕로 마커+케이스를 통째로 삭제합니다.</li>
+        <li><b>마커·텍스트박스</b> — 사진의 빈 곳을 더블클릭하면 마커(알파벳 원)와 텍스트박스가 함께 생깁니다. 각각 드래그로 옮길 수 있고, 텍스트박스에서 케이스종류·구성품·수량·비고를 바로 수정할 수 있습니다. "복제"로 통째로 복제하거나, ✕로 마커+케이스를 통째로 삭제합니다. 오른쪽의 "마커 크기"·"연결선 굵기" 슬라이더로 사진에 맞게 크기를 조절할 수 있습니다.</li>
         <li><b>라벨</b> — 텍스트박스의 "라벨 만들기"로 실제 인쇄 미리보기(검정 바탕 흰 글씨)를 만듭니다. 드래그 이동, 글자 클릭 후 직접 수정, A-/A+ 글자 크기, ⟳ 90도 회전, ⧉ 복제, 손잡이로 크기 조절이 가능합니다. 다른 라벨과 가장자리·중앙이 맞으면 빨간 점선으로 자동 정렬(스냅)됩니다.</li>
         <li><b>표 편집</b> — 표 탭에서 케이스 추가/삭제, 구성품·수량·비고를 직접 입력합니다. 종류 선택에는 플라스틱 케이스(A~L)와 지퍼백 외에, 케이스를 쓰지 않는 구성품을 화살표로 가리키는 "구성품" 옵션도 있습니다.</li>
         <li><b>저장 · 이전 버전</b> — 제목 옆 "💾 저장"으로 저장하고, "🕐 이전 버전"으로 최근 5개까지 되돌릴 수 있습니다.</li>
@@ -1769,10 +1769,14 @@ async function renderPhotoTab(){
           <label>마커 크기</label>
           <input type="range" min="16" max="44" value="${g.markerSize||24}" oninput="previewMarkerSize(this.value)" onchange="updateMarkerSize(this.value)">
         </div>
+        <div class="marker-size-control">
+          <label>연결선 굵기</label>
+          <input type="range" min="1" max="6" step="0.5" value="${g.lineWidth||2.2}" oninput="previewLineWidth(this.value)" onchange="updateLineWidth(this.value)">
+        </div>
         <button class="btn btn-ghost2" style="width:auto;" onclick="deletePhoto()">사진 삭제</button>
       ` : ''}
     </div>
-    <div class="photo-stage" id="photoStage" style="--marker-size:${g.markerSize||24}px;">
+    <div class="photo-stage" id="photoStage" style="--marker-size:${g.markerSize||24}px; --conn-line-width:${g.lineWidth||2.2}px;">
       <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#999; font-size:12px;">불러오는 중...</div>
     </div>
     ${editable ? `<p style="margin-top:8px; font-size:11.5px;">사진의 빈 곳을 더블클릭하면 새 마커와 텍스트박스가 추가됩니다. 마커와 텍스트박스는 각각 드래그로 옮길 수 있고, 텍스트박스 안에서 케이스종류·구성품·수량을 바로 수정할 수 있습니다. 사진 영역에 파일을 끌어다 놓아도 업로드됩니다.</p>` : ''}
@@ -1852,10 +1856,15 @@ function drawMarkers(stage, photo, editable){
     if (editable){
       dot.addEventListener('pointerdown', (e)=>{
         e.stopPropagation();
+        // 클릭한 지점과 마커의 실제 위치 사이의 차이를 기억해뒀다가, 드래그 내내 그 차이를 유지합니다.
+        // (이걸 안 하면 클릭하자마자 마커가 커서 위치로 순간이동해버립니다)
+        const rect0 = stage.getBoundingClientRect();
+        const grabDx = (e.clientX-rect0.left)/rect0.width*100 - m.x;
+        const grabDy = (e.clientY-rect0.top)/rect0.height*100 - m.y;
         const move = (ev)=>{
           const rect = stage.getBoundingClientRect();
-          m.x = Math.max(0, Math.min(100, (ev.clientX-rect.left)/rect.width*100));
-          m.y = Math.max(0, Math.min(100, (ev.clientY-rect.top)/rect.height*100));
+          m.x = Math.max(0, Math.min(100, (ev.clientX-rect.left)/rect.width*100 - grabDx));
+          m.y = Math.max(0, Math.min(100, (ev.clientY-rect.top)/rect.height*100 - grabDy));
           dot.style.left = m.x+'%';
           dot.style.top = m.y+'%';
           drawConnLine_(stage, lineLayer, mi, dot, box);
@@ -1901,10 +1910,14 @@ function drawMarkers(stage, photo, editable){
       box.addEventListener('pointerdown', (e)=>{
         if (['INPUT','BUTTON','SELECT','OPTION'].includes(e.target.tagName)) return;
         e.stopPropagation();
+        // 클릭한 지점과 텍스트박스의 실제 위치 사이의 차이를 기억해뒀다가, 드래그 내내 그 차이를 유지합니다.
+        const rect0 = stage.getBoundingClientRect();
+        const grabDx = (e.clientX-rect0.left)/rect0.width*100 - m.box.x;
+        const grabDy = (e.clientY-rect0.top)/rect0.height*100 - m.box.y;
         const move = (ev)=>{
           const rect = stage.getBoundingClientRect();
-          m.box.x = Math.max(0, Math.min(100, (ev.clientX-rect.left)/rect.width*100));
-          m.box.y = Math.max(0, Math.min(100, (ev.clientY-rect.top)/rect.height*100));
+          m.box.x = Math.max(0, Math.min(100, (ev.clientX-rect.left)/rect.width*100 - grabDx));
+          m.box.y = Math.max(0, Math.min(100, (ev.clientY-rect.top)/rect.height*100 - grabDy));
           box.style.left = m.box.x+'%';
           box.style.top = m.box.y+'%';
           drawConnLine_(stage, lineLayer, mi, dot, box);
@@ -2018,6 +2031,16 @@ function previewMarkerSize(v){
 function updateMarkerSize(v){
   const g = games.find(x=>x.id===currentGameId);
   if (g) g.markerSize = Number(v);
+}
+
+/** 연결선 굵기도 마커 크기와 동일한 방식: 슬라이더를 움직이는 동안은 미리보기만, 놓으면 저장 대상에 반영. */
+function previewLineWidth(v){
+  const stage = document.getElementById('photoStage');
+  if (stage) stage.style.setProperty('--conn-line-width', v+'px');
+}
+function updateLineWidth(v){
+  const g = games.find(x=>x.id===currentGameId);
+  if (g) g.lineWidth = Number(v);
 }
 
 function updateMarkerCaseType(mi, val){
@@ -2180,10 +2203,16 @@ function drawLabels(stage, photo, editable){
         const offsetXPx = (localW - visualW) / 2; // wrap 기준 위치 → 실제 화면 왼쪽위로 변환하는 보정값
         const offsetYPx = (localH - visualH) / 2;
 
+        // 클릭한 지점(드래그 손잡이 위치)과 라벨의 실제 위치 사이의 차이를 기억해뒀다가,
+        // 드래그 내내 그 차이를 유지합니다. (이걸 안 하면 클릭하자마자 라벨이 커서 위치로 순간이동해버립니다)
+        const stageRect0 = stage.getBoundingClientRect();
+        const grabDx = (e.clientX-stageRect0.left)/stageRect0.width*100 - lbl.x;
+        const grabDy = (e.clientY-stageRect0.top)/stageRect0.height*100 - lbl.y;
+
         const move = (ev)=>{
           const rect = stage.getBoundingClientRect();
-          let x = (ev.clientX-rect.left)/rect.width*100;
-          let y = (ev.clientY-rect.top)/rect.height*100;
+          let x = (ev.clientX-rect.left)/rect.width*100 - grabDx;
+          let y = (ev.clientY-rect.top)/rect.height*100 - grabDy;
           x = Math.max(0, Math.min(100, x));
           y = Math.max(0, Math.min(100, y));
 
@@ -2397,7 +2426,7 @@ async function renderPhotoToCanvas_(g, photo, refWidth){
     const x1 = (m.x/100)*canvas.width, y1 = (m.y/100)*canvas.height;
     const x2 = box.x, y2 = box.y + box.h/2;
     ctx.strokeStyle = 'rgba(80,80,75,.85)';
-    ctx.lineWidth = 2.2*k;
+    ctx.lineWidth = (g.lineWidth||2.2)*k;
     ctx.beginPath();
     ctx.moveTo(x1, y1);
     ctx.lineTo(x2, y2);
@@ -3270,7 +3299,7 @@ Object.assign(window, {
   downloadGuideImage, downloadAllGuideImages,
   addCase, updateCaseType, updateCaseNote, updateItem, deleteItem, saveGame, doLogout,
   updateMarkerCaseType, updateMarkerItem, addMarkerItem, deleteMarkerItem, removeMarkerCase, duplicateMarkerCase,
-  previewMarkerSize, updateMarkerSize,
+  previewMarkerSize, updateMarkerSize, previewLineWidth, updateLineWidth,
   createLabelFromMarker, changeLabelFontSize, rotateLabel, deleteLabel, duplicateLabel,
   rotateCrop_, closeCropModal_, applyCropAndUpload_,
   showHistoryModal_, restoreHistory_,
