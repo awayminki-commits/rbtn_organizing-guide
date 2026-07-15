@@ -1731,9 +1731,17 @@ async function deleteGame(gameId){
 }
 
 async function createNewGame(){
+  const id = prompt('새 게임의 ID를 입력하세요 (숫자 또는 문자, 다른 게임과 겹치면 안 됩니다):');
+  if (id === null) return;
+  const trimmedId = id.trim();
+  if (!trimmedId){ alert('게임 ID를 입력해주세요.'); return; }
+  if (games.some(x => String(x.id) === trimmedId)){
+    alert(`ID "${trimmedId}"는 이미 사용 중입니다. 다른 ID를 입력해주세요.`);
+    return;
+  }
   const name = prompt('새 게임 이름을 입력하세요:');
   if (!name || !name.trim()) return;
-  const ref = await addDoc(collection(db, 'games'), {
+  await setDoc(doc(db, 'games', trimmedId), {
     name: name.trim(),
     cases: [],
     guideDone: false,
@@ -1742,7 +1750,7 @@ async function createNewGame(){
     updatedAt: Date.now()
   });
   await loadGames();
-  openGame(ref.id);
+  openGame(trimmedId);
 }
 
 async function openGame(id){
@@ -1774,7 +1782,14 @@ function renderDetail(){
     <div id="presenceBannerSlot"></div>
     <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:10px; flex-wrap:wrap;">
       <div>
-        <h2 style="margin:0 0 4px;">${g.name} <span style="font-size:12px; font-weight:600; font-family:var(--sans); color:var(--ink-mid);">ID ${g.id}</span></h2>
+        ${editable ? `
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:4px;">
+            <input type="text" value="${g.name || ''}" oninput="updateGameName(this.value)"
+              style="font-size:19px; font-weight:800; font-family:var(--sans); border:1px solid var(--line); border-radius:6px; padding:3px 8px; min-width:160px;">
+            <span style="font-size:12px; font-weight:600; font-family:var(--sans); color:var(--ink-mid);">ID ${g.id}</span>
+            <button class="btn btn-ghost2" style="width:auto; padding:3px 8px; font-size:11px;" onclick="changeGameId_()">ID 변경</button>
+          </div>
+        ` : `<h2 style="margin:0 0 4px;">${g.name} <span style="font-size:12px; font-weight:600; font-family:var(--sans); color:var(--ink-mid);">ID ${g.id}</span></h2>`}
         ${editable ? `
           <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--ink-soft); cursor:pointer;">
             <input type="checkbox" ${g.guideDone?'checked':''} onchange="toggleGuideDone(this.checked)"> 가이드 제작 완료
@@ -1810,6 +1825,49 @@ async function toggleGuideDone(checked){
 function updateGameNote(v){
   const g = games.find(x=>x.id===currentGameId);
   g.note = v; // 저장 버튼 누를 때 같이 반영됩니다.
+}
+
+function updateGameName(v){
+  const g = games.find(x=>x.id===currentGameId);
+  g.name = v; // 저장 버튼 누를 때 같이 반영됩니다.
+}
+
+/**
+ * 게임 ID를 바꿉니다. Firestore는 문서 ID를 직접 바꿀 수 없어서,
+ * 새 ID로 문서(+이전 버전 기록)를 통째로 복사한 뒤 기존 문서를 지우는 방식으로 처리합니다.
+ */
+async function changeGameId_(){
+  const g = games.find(x=>x.id===currentGameId);
+  if (!g) return;
+  const newId = prompt(`새 게임 ID를 입력하세요 (현재: ${g.id}):`, g.id);
+  if (newId === null) return;
+  const trimmed = newId.trim();
+  if (!trimmed || trimmed === g.id) return;
+  if (games.some(x => String(x.id) === trimmed)){
+    alert(`ID "${trimmed}"는 이미 다른 게임이 사용 중입니다.`);
+    return;
+  }
+  if (!confirm(`게임 ID를 "${g.id}" → "${trimmed}"로 변경할까요?\n이전 버전 기록도 함께 옮겨집니다. 되돌릴 수 없습니다.`)) return;
+
+  try{
+    const oldId = g.id;
+    const { id, editLockHolder, editLockAt, ...data } = g; // 편집 잠금 정보는 새 ID로 옮기지 않습니다.
+    await setDoc(doc(db, 'games', trimmed), { ...data, updatedAt: Date.now() });
+
+    // 이전 버전 기록(history)도 그대로 복사합니다.
+    const historySnap = await getDocs(collection(db, 'games', oldId, 'history'));
+    for (const d of historySnap.docs){
+      await setDoc(doc(db, 'games', trimmed, 'history', d.id), d.data());
+    }
+
+    leavePresence_(); // 옛 ID에 남아있던 편집 잠금/접속 표시를 정리합니다.
+    await deleteDoc(doc(db, 'games', oldId));
+
+    await loadGames();
+    openGame(trimmed);
+  }catch(e){
+    alert('게임 ID 변경 중 문제가 발생했습니다: ' + e.message);
+  }
 }
 
 function switchMode(m){
@@ -3464,7 +3522,7 @@ Object.assign(window, {
   rotateCrop_, closeCropModal_, applyCropAndUpload_,
   showHistoryModal_, restoreHistory_,
   toggleWorkComplete, deleteGame, toggleGameSelect_, clearListSelection_, setListWorkFilter_,
-  toggleGuideDone, updateGameNote,
+  toggleGuideDone, updateGameNote, updateGameName, changeGameId_,
   openDashboard, closeDashboard, setDashboardFilter, toggleGuideDoneFor,
   openAccessManagement, approveRequest, rejectRequest, addDirectAccess, removeAccess, addStore, removeStore,
   openMigrationTool, startMigration_,
