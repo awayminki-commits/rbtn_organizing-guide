@@ -130,6 +130,8 @@
   .marker:active{cursor:grabbing;}
   .anno-box{position:absolute; z-index:4; background:rgba(255,255,255,.98); border:1px solid var(--line); border-left:4px solid var(--c, var(--line)); border-radius:8px; padding:8px 10px; min-width:150px; max-width:220px; box-shadow:0 3px 12px rgba(0,0,0,.2); font-size:11.5px; cursor:grab;}
   .anno-box.readonly{cursor:default;}
+  .anno-box.collapsed{cursor:pointer;}
+  .anno-box.selected{box-shadow:0 0 0 2px var(--accent), 0 3px 12px rgba(0,0,0,.25);}
   .anno-box:active{cursor:grabbing;}
   .anno-head{display:flex; align-items:center; gap:6px; margin-bottom:6px; flex-wrap:wrap;}
   .anno-head select{font-family:var(--mono); font-weight:800; font-size:12px; padding:2px 4px; border:1px solid var(--line); border-radius:5px; background:var(--bg);}
@@ -233,6 +235,8 @@
   .label-wrap{position:absolute; z-index:6;}
   .label-rotate-group{position:relative; display:inline-block; transform-origin:center center;}
   .photo-label{background:#000; color:#fff; font-family:var(--sans); font-weight:600; white-space:pre-wrap; padding:0.5em 0.7em; border-radius:0.25em; line-height:1.35; box-shadow:0 2px 8px rgba(0,0,0,.35); outline:none; min-width:1.4em; text-align:center; transform-origin:center center; display:flex; align-items:center; justify-content:center; box-sizing:border-box; cursor:text;}
+  .label-wrap.collapsed .photo-label{cursor:pointer;}
+  .label-wrap.selected .photo-label{box-shadow:0 0 0 2px var(--accent), 0 2px 8px rgba(0,0,0,.35);}
   .photo-label:focus{box-shadow:0 0 0 2px var(--accent);}
   .label-resize{position:absolute; width:13px; height:13px; background:#fff; border:2px solid #000; border-radius:2px; cursor:nwse-resize; z-index:10;}
   .label-toolbar{position:absolute; display:flex; align-items:center; gap:2px; background:var(--surface); border:1px solid var(--line); border-radius:6px; padding:2px; box-shadow:0 2px 6px rgba(0,0,0,.15); white-space:nowrap; z-index:10;}
@@ -393,6 +397,19 @@ let currentMode = 'photo'; // 'photo' | 'table'
 let currentPhotoIdx = 0;
 let photoUrlCache = {}; // storagePath -> 다운로드 URL (매번 다시 안 구해오게)
 let labelRectsCache_ = []; // 정렬 가이드용: 각 라벨의 실제 화면 위치
+let editSelection_ = null; // 편집자 모드에서 지금 "선택되어 편집 중"인 것 하나: { type:'marker'|'label', idx } 또는 null(아무것도 선택 안 됨)
+
+/** 마커/텍스트박스 또는 라벨을 "선택"해서 편집 모드로 펼칩니다. 나머지는 자동으로 뷰어 화면처럼 접힙니다. */
+function selectAnno_(type, idx){
+  editSelection_ = { type, idx };
+  redrawCurrentPhoto_();
+}
+/** 선택을 해제합니다 (빈 곳을 클릭했을 때). 모든 텍스트박스/라벨이 뷰어 화면처럼 보입니다. */
+function deselectAnno_(){
+  if (!editSelection_) return;
+  editSelection_ = null;
+  redrawCurrentPhoto_();
+}
 
 // ============================================================
 // 로그인 화면 렌더링
@@ -1771,6 +1788,7 @@ async function renderPhotoTab(){
   const editable = currentRole === 'editor';
   const photos = g.photos || [];
   const body = document.getElementById('tabBody');
+  editSelection_ = null; // 사진을 새로 열거나 넘길 때는 선택을 초기화합니다 (모두 접힌 상태로 시작)
 
   const uploadRowHtml = editable ? `
     <div class="upload-row">
@@ -1856,9 +1874,16 @@ async function renderPhotoTab(){
       g.cases.push({ caseType:'A', items:[{name:'새 구성품', qty:1}] });
       photo.markers = photo.markers || [];
       photo.markers.push({ x, y, caseIdx: g.cases.length-1, box:{x:boxX, y:boxY} });
+      editSelection_ = { type:'marker', idx: photo.markers.length-1 }; // 방금 만든 것을 바로 편집할 수 있도록 펼쳐둡니다
       drawMarkers(stage, photo, editable);
       drawLabels(stage, photo, editable);
     };
+
+    // 빈 곳을 한 번 클릭하면 선택을 해제합니다 (모든 텍스트박스·라벨이 다시 뷰어 화면처럼 접힙니다)
+    stage.addEventListener('click', (e)=>{
+      if (e.target !== stage) return;
+      deselectAnno_();
+    });
 
     // 사진 영역에 파일을 끌어다 놓아도 업로드할 수 있습니다.
     stage.addEventListener('dragover', e=>{ e.preventDefault(); stage.classList.add('dragover'); });
@@ -1910,7 +1935,10 @@ function drawMarkers(stage, photo, editable){
         const rect0 = stage.getBoundingClientRect();
         const grabDx = (e.clientX-rect0.left)/rect0.width*100 - m.x;
         const grabDy = (e.clientY-rect0.top)/rect0.height*100 - m.y;
+        const downX = e.clientX, downY = e.clientY;
+        let moved = false;
         const move = (ev)=>{
+          if (Math.abs(ev.clientX-downX) > 3 || Math.abs(ev.clientY-downY) > 3) moved = true;
           const rect = stage.getBoundingClientRect();
           m.x = Math.max(0, Math.min(100, (ev.clientX-rect.left)/rect.width*100 - grabDx));
           m.y = Math.max(0, Math.min(100, (ev.clientY-rect.top)/rect.height*100 - grabDy));
@@ -1918,7 +1946,12 @@ function drawMarkers(stage, photo, editable){
           dot.style.top = m.y+'%';
           drawConnLine_(stage, lineLayer, mi, dot, box);
         };
-        const up = ()=>{ window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); };
+        const up = ()=>{
+          window.removeEventListener('pointermove', move);
+          window.removeEventListener('pointerup', up);
+          // 드래그 없이 그냥 클릭만 한 거라면, 이 마커의 텍스트박스를 편집 모드로 펼쳐줍니다.
+          if (!moved && !(editSelection_ && editSelection_.type==='marker' && editSelection_.idx===mi)) selectAnno_('marker', mi);
+        };
         window.addEventListener('pointermove', move);
         window.addEventListener('pointerup', up);
       });
@@ -1930,11 +1963,12 @@ function drawMarkers(stage, photo, editable){
     if (!m.box || !c){ return; } // 구버전 마커(박스 없이 만들어진 것)는 패널 없이 점만 표시
 
     box = document.createElement('div');
-    box.className = 'anno-box case-' + c.caseType + (editable ? ' draggable' : ' readonly');
+    const isSelected = editable && editSelection_ && editSelection_.type==='marker' && editSelection_.idx===mi;
+    box.className = 'anno-box case-' + c.caseType + (editable ? (isSelected ? ' draggable selected' : ' collapsed') : ' readonly');
     box.style.left = m.box.x+'%';
     box.style.top = m.box.y+'%';
 
-    if (editable){
+    if (editable && isSelected){
       box.innerHTML = `
         <div class="anno-head">
           <select onchange="updateMarkerCaseType(${mi}, this.value)">${SELECTABLE_TYPES.map(t=>`<option value="${t}" ${t===c.caseType?'selected':''}>${typeLabel_(t)}</option>`).join('')}</select>
@@ -1976,6 +2010,15 @@ function drawMarkers(stage, photo, editable){
         window.addEventListener('pointermove', move);
         window.addEventListener('pointerup', up);
       });
+    } else if (editable){
+      // 선택되지 않은 상태: 뷰어 화면과 똑같이 간단히 보여주고, 클릭하면 그때 편집 모드로 펼쳐집니다.
+      // (케이스가 많은 사진에서 입력창들이 한꺼번에 겹쳐 보이는 걸 막기 위함입니다)
+      box.innerHTML = `
+        <div class="anno-head"><span class="case-badge case-${c.caseType}" style="font-size:11px; padding:2px 6px;">${typeLabel_(c.caseType)}</span></div>
+        ${(c.items||[]).map(it=>`<div style="margin-bottom:2px;">${it.name||''}${it.qty?` <span style="color:var(--ink-soft);">${it.qty}개</span>`:''}</div>`).join('')}
+        ${c.note ? `<div style="margin-top:4px; font-size:11px; color:var(--ink-soft); font-style:italic; white-space:pre-wrap;">${c.note}</div>` : ''}
+      `;
+      box.addEventListener('click', (e)=>{ e.stopPropagation(); selectAnno_('marker', mi); });
     } else {
       box.innerHTML = `
         <div class="anno-head"><span class="case-badge case-${c.caseType}" style="font-size:11px; padding:2px 6px;">${typeLabel_(c.caseType)}</span></div>
@@ -2240,8 +2283,16 @@ function drawLabels(stage, photo, editable){
     }
 
     if (editable){
+      const isSelected = editSelection_ && editSelection_.type==='label' && editSelection_.idx===li;
+      if (!isSelected){
+        // 선택되지 않은 상태: 뷰어처럼 그냥 보여주기만 하고, 클릭하면 편집 모드로 펼쳐집니다.
+        wrap.classList.add('collapsed');
+        wrap.addEventListener('click', (e)=>{ e.stopPropagation(); selectAnno_('label', li); });
+        return;
+      }
       labelEl.contentEditable = 'true';
       labelEl.addEventListener('blur', ()=>{ lbl.text = labelEl.innerText; });
+      wrap.classList.add('selected');
 
       // 회전 후 실제 화면에 보이는 라벨의 테두리를 측정해서, 툴바는 왼쪽 위
       // 모서리 바로 위, 손잡이는 오른쪽 아래 모서리에 맞춰 배치합니다.
