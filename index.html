@@ -1127,6 +1127,7 @@ function openPurchaseGuide(){
       <div class="pg-actions">
         <button class="btn btn-primary2" style="width:auto;" onclick="selectAllTop50Games()">TOP50 게임 선택</button>
         <button class="btn btn-ghost2" style="width:auto;" onclick="deselectAllPurchaseGames()">전체 해제</button>
+        <button class="btn btn-ghost2" style="width:auto;" onclick="exportGameCaseCountsCsv_()" title="전체 게임의 케이스 종류별 수량을 CSV로 내보냅니다 (엑셀 구매가이드 양식에 붙여넣기용)">📄 전체 게임 케이스 수량 CSV 내보내기</button>
       </div>
     </div>
     <div class="pg-body">
@@ -1229,6 +1230,37 @@ function deselectAllPurchaseGames(){
   purchaseGuideSelected_.clear();
   renderPurchaseGameList_();
   renderPurchaseCaseSummary_();
+}
+
+/**
+ * 전체 게임의 "케이스 종류별 수량"을 CSV로 내보냅니다. (엑셀 구매가이드 양식의 게임목록 탭에
+ * 그대로 붙여넣을 수 있도록, 게임ID·게임이름·A~L 순서로 열을 맞췄습니다. 지퍼백/구성품은
+ * 엑셀 양식에서 다루지 않으므로 포함하지 않습니다.)
+ */
+function exportGameCaseCountsCsv_(){
+  const PLASTIC_CASE_TYPES = CASE_TYPES.filter(t => t !== 'ZIP');
+  const rows = [['게임ID', '게임이름', ...PLASTIC_CASE_TYPES]];
+
+  games.slice().sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''), 'ko')).forEach(g=>{
+    const counts = {};
+    (g.cases||[]).forEach(c=>{ if (c.caseType !== 'ZIP' && c.caseType !== NON_CASE_TYPE) counts[c.caseType] = (counts[c.caseType]||0) + 1; });
+    rows.push([g.id, g.name || '', ...PLASTIC_CASE_TYPES.map(t => counts[t] || 0)]);
+  });
+
+  const csvEscape = v => {
+    const s = String(v ?? '');
+    return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
+  };
+  const csv = rows.map(r => r.map(csvEscape).join(',')).join('\r\n');
+  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' }); // BOM 포함: 엑셀에서 한글 깨짐 방지
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `게임별_케이스수량_${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 5000);
 }
 
 /**
@@ -3433,7 +3465,7 @@ Object.assign(window, {
   openAccessManagement, approveRequest, rejectRequest, addDirectAccess, removeAccess, addStore, removeStore,
   openMigrationTool, startMigration_,
   previewGameReplaceFiles_, updateGameReplaceId_, startGameReplace_,
-  openPurchaseGuide, togglePurchaseGameSelect, selectAllTop50Games, deselectAllPurchaseGames,
+  openPurchaseGuide, togglePurchaseGameSelect, selectAllTop50Games, deselectAllPurchaseGames, exportGameCaseCountsCsv_,
   openBulkDownloadTool, toggleBulkDownloadGameSelect_, selectAllGuideDoneGames_, selectAllBulkDownloadGames_, deselectAllBulkDownloadGames_, startBulkDownload_,
   openHelpModal
 });
