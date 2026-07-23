@@ -2657,9 +2657,10 @@ async function renderPhotoToCanvas_(g, photo, refWidth){
   (photo.markers||[]).forEach((m, mi)=>{
     const box = boxLayout[mi];
     if (!box) return;
+    const c = g.cases[m.caseIdx];
     const x1 = (m.x/100)*canvas.width, y1 = (m.y/100)*canvas.height;
     const x2 = box.x, y2 = box.y + box.h/2;
-    ctx.strokeStyle = 'rgba(80,80,75,.85)';
+    ctx.strokeStyle = c ? caseColor_(c.caseType) : 'rgba(80,80,75,.85)';
     ctx.lineWidth = (g.lineWidth||2.2)*k;
     ctx.beginPath();
     ctx.moveTo(x1, y1);
